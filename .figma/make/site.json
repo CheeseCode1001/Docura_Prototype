@@ -1,0 +1,11 @@
+{
+  "title": "docura_prototype",
+  "description": "This web application offers a user-friendly authentication interface designed for seamless login and registration, enhancing security and user experience.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

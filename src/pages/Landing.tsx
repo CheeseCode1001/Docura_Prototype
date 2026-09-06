@@ -1,6 +1,47 @@
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/context/AppContext";
-import { C, DocuraLogo } from "@/components/ui";
+import { C } from "@/components/ui";
+import logo from "@/assets/logo.png";
+
+const LANDING_NAV = [
+  { label: "How it works", page: "public-how-it-works" },
+  { label: "Docura Care", page: "public-care" },
+  { label: "Docura Now", page: "public-now" },
+  { label: "For Doctors", page: "public-doctors" },
+];
+
+const FOOTER_LINKS: Record<string, { label: string; page: string }[]> = {
+  Patients: [
+    { label: "Docura Now", page: "public-now" },
+    { label: "Docura Care", page: "public-care" },
+    { label: "Find a Doctor", page: "find-doctor" },
+    { label: "Health Passport", page: "health-passport" },
+  ],
+  Doctors: [
+    { label: "Join Docura", page: "doctor-signup" },
+    { label: "How it works", page: "public-how-it-works" },
+    { label: "Doctor Login", page: "doctor-login" },
+  ],
+  Company: [
+    { label: "About", page: "public-about" },
+    { label: "Contact", page: "public-contact" },
+    { label: "Help", page: "public-help" },
+  ],
+  Legal: [
+    { label: "Privacy", page: "public-privacy" },
+    { label: "Terms", page: "public-terms" },
+    { label: "Security", page: "public-security" },
+  ],
+};
+
+function LandingLogo({ size = 32 }: { size?: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <img src={logo} width={size} height={size} alt="Docura" className="object-contain" />
+      <span className="font-bold text-xl" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Docura</span>
+    </div>
+  );
+}
 
 const HERO_SLIDES = [
   {
@@ -88,12 +129,13 @@ export default function Landing() {
           className="max-w-7xl mx-auto px-6 flex items-center justify-between"
           style={{ height: scrolled ? 60 : 72, transition: "height 0.3s ease" }}
         >
-          <DocuraLogo size={32} showText />
+          <LandingLogo size={32} />
 
           <nav className="hidden md:flex items-center gap-8">
-            {["How it works", "Docura Care", "Docura Now", "For Doctors"].map((label) => (
+            {LANDING_NAV.map(({ label, page }) => (
               <button
                 key={label}
+                onClick={() => navigate(page)}
                 className="text-sm transition-opacity hover:opacity-60"
                 style={{ color: C.navy, fontWeight: 500 }}
               >
@@ -134,8 +176,8 @@ export default function Landing() {
             className="md:hidden border-t px-6 py-5 flex flex-col gap-4"
             style={{ borderColor: C.border, backgroundColor: "#FAFAF8" }}
           >
-            {["How it works", "Docura Care", "Docura Now", "For Doctors"].map((label) => (
-              <button key={label} className="text-sm text-left" style={{ color: C.navy }}>
+            {LANDING_NAV.map(({ label, page }) => (
+              <button key={label} onClick={() => { navigate(page); setMobileMenuOpen(false); }} className="text-sm text-left" style={{ color: C.navy }}>
                 {label}
               </button>
             ))}
@@ -1073,43 +1115,85 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Docura Proxy ───────────────────────────────────── */}
+      {/* ── Feature Bento ──────────────────────────────────── */}
       <section
         ref={proxy.ref as React.RefObject<HTMLElement>}
-        style={{ backgroundColor: "white", ...fadeStyle(proxy.visible) }}
-        className="py-20 px-6"
+        style={{ backgroundColor: "#FAFAF8", ...fadeStyle(proxy.visible) }}
+        className="py-20 md:py-28 px-6"
       >
         <div className="max-w-7xl mx-auto">
-          <div
-            className="px-10 py-12 text-center rounded-2xl"
-            style={{ backgroundColor: "#FAFAF8", border: `1px solid ${C.border}`, maxWidth: 520, margin: "0 auto" }}
-          >
-            <span
-              className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest mb-5"
-              style={{ backgroundColor: C.amberLight, color: C.amber }}
-            >
-              Coming Soon
-            </span>
-            <h3
-              className="mb-3"
-              style={{ fontFamily: "var(--font-display)", fontSize: "2rem", color: C.navy, fontWeight: 700 }}
-            >
-              Docura Proxy
-            </h3>
-            <p
-              className="text-base italic mb-3"
-              style={{ fontFamily: "var(--font-display)", color: "#5c6580" }}
-            >
-              "Care for someone you love."
+          <div className="mb-10 max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>
+              One healthcare home
             </p>
-            <p className="text-sm leading-relaxed mb-8" style={{ color: "#7a8099" }}>
-              Soon, you'll be able to coordinate healthcare for someone else — a parent, partner, or child — from your Docura account.
+            <h2
+              className="mb-5"
+              style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2rem, 4vw, 3.5rem)", color: C.navy, fontWeight: 700, lineHeight: 1.08 }}
+            >
+              Everything your care needs, together.
+            </h2>
+            <p className="text-base leading-relaxed" style={{ color: "#5c6580", maxWidth: 560 }}>
+              From a quick consultation to a lifelong care relationship, Docura keeps the important parts of your health journey close at hand.
             </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)]">
             <button
-              className="px-7 py-3 text-sm font-semibold rounded-full border transition-colors hover:bg-gray-50"
-              style={{ borderColor: C.border, color: C.navy }}
+              onClick={() => navigate("patient-care")}
+              className="md:col-span-2 md:row-span-2 rounded-3xl p-8 md:p-10 text-left relative overflow-hidden transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: C.navy, color: "white" }}
             >
-              Notify Me
+              <div className="relative z-10 h-full flex flex-col justify-between min-h-[360px]">
+                <div>
+                  <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-8" style={{ backgroundColor: "rgba(255,255,255,0.12)", color: C.amber }}>
+                    Docura Care
+                  </span>
+                  <h3 className="text-3xl md:text-4xl font-bold leading-tight mb-4" style={{ fontFamily: "var(--font-display)" }}>
+                    Care that remembers you.
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.65)", maxWidth: 330 }}>
+                    Your doctor, your history, and your care plan stay connected over time.
+                  </p>
+                </div>
+                <span className="text-sm font-semibold" style={{ color: C.amber }}>Explore personal care →</span>
+              </div>
+              <div className="absolute -right-16 -bottom-20 w-64 h-64 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.14)" }} />
+              <div className="absolute -right-4 -bottom-8 w-40 h-40 rounded-full" style={{ border: "1px solid rgba(255,255,255,0.14)" }} />
+            </button>
+
+            <button
+              onClick={() => navigate("docura-now-flow")}
+              className="md:col-span-2 rounded-3xl p-7 text-left transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: C.amber, color: C.navy }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: "rgba(21,95,84,0.68)" }}>Docura Now</p>
+                  <h3 className="text-2xl font-bold mb-3" style={{ fontFamily: "var(--font-display)" }}>A doctor for today.</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(21,95,84,0.72)", maxWidth: 260 }}>Get the care you need without waiting for tomorrow.</p>
+                </div>
+                <span className="text-3xl" aria-hidden="true">↗</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate("health-passport")}
+              className="rounded-3xl p-7 text-left border transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: "white", borderColor: C.border }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Health Passport</p>
+              <h3 className="text-xl font-bold mb-3" style={{ color: C.navy, fontFamily: "var(--font-display)" }}>Your health, always with you.</h3>
+              <p className="text-sm leading-relaxed" style={{ color: "#7a8099" }}>Share the essentials with the doctors caring for you.</p>
+            </button>
+
+            <button
+              onClick={() => navigate("public-care")}
+              className="rounded-3xl p-7 text-left border transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: "#EAF4F1", borderColor: "#D7E9E4" }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.navy }}>Global care</p>
+              <h3 className="text-xl font-bold mb-3" style={{ color: C.navy, fontFamily: "var(--font-display)" }}>Wherever life takes you.</h3>
+              <p className="text-sm leading-relaxed" style={{ color: "#55736D" }}>Your care can continue across borders.</p>
             </button>
           </div>
         </div>
@@ -1170,7 +1254,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-5 gap-10 mb-14">
             <div className="md:col-span-2">
-              <DocuraLogo size={32} showText />
+              <LandingLogo size={32} />
               <p
                 className="mt-4 text-sm leading-relaxed"
                 style={{ color: "rgba(255,255,255,0.45)", maxWidth: 240 }}
@@ -1179,25 +1263,8 @@ export default function Landing() {
               </p>
             </div>
 
-            {[
-              {
-                title: "Patients",
-                links: ["Docura Now", "Docura Care", "Find a Doctor", "Health Passport"],
-              },
-              {
-                title: "Doctors",
-                links: ["Join Docura", "How it works", "Doctor Login"],
-              },
-              {
-                title: "Company",
-                links: ["About", "Contact", "Help"],
-              },
-              {
-                title: "Legal",
-                links: ["Privacy", "Terms", "Security"],
-              },
-            ].map((col) => (
-              <div key={col.title}>
+            {Object.entries(FOOTER_LINKS).map(([title, links]) => (
+              <div key={title}>
                 <h4
                   className="text-xs font-semibold uppercase tracking-widest mb-4"
                   style={{ color: "rgba(255,255,255,0.35)" }}
@@ -1205,15 +1272,15 @@ export default function Landing() {
                   {col.title}
                 </h4>
                 <ul className="flex flex-col gap-2.5">
-                  {col.links.map((l) => (
-                    <li key={l}>
-                      <a
-                        href="#"
+                  {links.map(({ label, page }) => (
+                    <li key={label}>
+                      <button
+                        onClick={() => navigate(page)}
                         className="text-sm transition-colors hover:text-white"
                         style={{ color: "rgba(255,255,255,0.56)" }}
                       >
-                        {l}
-                      </a>
+                        {label}
+                      </button>
                     </li>
                   ))}
                 </ul>

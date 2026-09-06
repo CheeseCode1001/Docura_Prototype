@@ -4,6 +4,7 @@ import { ToastContainer } from "@/components/ui";
 // Public pages
 import Landing from "@/pages/Landing";
 import RoleSelect, { ProxyWaitlist } from "@/pages/RoleSelect";
+import PublicPage from "@/pages/PublicPage";
 
 // Auth
 import AuthLayout from "@/pages/auth/Auth";
@@ -84,6 +85,16 @@ function Router() {
     case "landing": return <Landing />;
     case "role-select": return <RoleSelect />;
     case "proxy-waitlist": return <ProxyWaitlist />;
+    case "public-how-it-works": return <PublicPage page="how-it-works" />;
+    case "public-care": return <PublicPage page="care" />;
+    case "public-now": return <PublicPage page="now" />;
+    case "public-doctors": return <PublicPage page="doctors" />;
+    case "public-about": return <PublicPage page="about" />;
+    case "public-contact": return <PublicPage page="contact" />;
+    case "public-help": return <PublicPage page="help" />;
+    case "public-privacy": return <PublicPage page="privacy" />;
+    case "public-terms": return <PublicPage page="terms" />;
+    case "public-security": return <PublicPage page="security" />;
 
     // Auth — patient
     case "login": return <AuthLayout initialView="login" />;

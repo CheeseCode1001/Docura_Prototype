@@ -144,3 +144,7 @@
 *.stl                filter=lfs diff=lfs merge=lfs -text
 *.nc                 filter=lfs diff=lfs merge=lfs -text
 *.mat                filter=lfs diff=lfs merge=lfs -text
+
+# These logos must be available as regular files to the deployment host.
+src/assets/logo.png -filter -diff -merge
+public/logo.png -filter -diff -merge

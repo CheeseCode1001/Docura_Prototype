@@ -1269,7 +1269,7 @@ export default function Landing() {
                   className="text-xs font-semibold uppercase tracking-widest mb-4"
                   style={{ color: "rgba(255,255,255,0.35)" }}
                 >
-                  {col.title}
+                  {title}
                 </h4>
                 <ul className="flex flex-col gap-2.5">
                   {links.map(({ label, page }) => (

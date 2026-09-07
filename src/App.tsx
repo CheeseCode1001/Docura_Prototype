@@ -39,6 +39,7 @@ import PatientProfile from "@/pages/patient/Profile";
 
 // Enterprise pages
 import EnterpriseDashboard from "@/pages/enterprise/Dashboard";
+import ProxyDashboard from "@/pages/proxy/Dashboard";
 
 // Doctor pages
 import DoctorOnboarding from "@/pages/doctor/Onboarding";
@@ -78,7 +79,12 @@ function AppRoot() {
 }
 
 function Router() {
-  const { page } = useApp();
+  const { page, role, navigate } = useApp();
+
+  const protectedRole = page.startsWith("doctor-") ? "doctor" : page.startsWith("admin-") ? "admin" : page.startsWith("patient-") || ["find-doctor", "doctor-profile", "docura-now-flow", "patient-care", "health-record", "health-intelligence", "health-passport", "health-timeline", "patient-medications", "medical-documents", "emergency-card", "patient-care-plans", "follow-ups", "care-team", "care-journey", "travel-mode", "health-sharing"].includes(page) ? "patient" : page.startsWith("enterprise-") ? "enterprise" : page.startsWith("proxy-") ? "proxy" : null;
+  if (protectedRole && role !== protectedRole) {
+    return <AccessDenied expectedRole={protectedRole} onReturn={() => navigate(role ? `${role}-dashboard` : "landing")} />;
+  }
 
   switch (page) {
     // Public
@@ -138,6 +144,7 @@ function Router() {
 
     // Enterprise
     case "enterprise-dashboard": return <EnterpriseDashboard />;
+    case "proxy-dashboard": return <ProxyDashboard />;
 
     // Doctor app
     case "doctor-onboarding": return <DoctorOnboarding />;
@@ -168,6 +175,10 @@ function Router() {
 
     default: return <Landing />;
   }
+}
+
+function AccessDenied({ expectedRole, onReturn }: { expectedRole: string; onReturn: () => void }) {
+  return <div className="min-h-screen flex items-center justify-center px-6" style={{ backgroundColor: "#FAFAF8", fontFamily: "var(--font-body)" }}><div className="max-w-md text-center"><p className="text-xs uppercase tracking-widest font-semibold mb-3" style={{ color: "#FFAA3D" }}>Restricted workspace</p><h1 className="text-3xl font-bold mb-3" style={{ color: "#155F54", fontFamily: "var(--font-display)" }}>This workspace is not available for your account.</h1><p className="text-sm mb-6" style={{ color: "#71817D" }}>Your current role does not have permission to view the {expectedRole} workspace.</p><button onClick={onReturn} className="px-5 py-3 rounded-xl text-sm font-semibold text-white" style={{ backgroundColor: "#155F54" }}>Return to my workspace</button></div></div>;
 }
 
 export default function App() {

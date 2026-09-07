@@ -28,8 +28,8 @@ const ROLES = [
     subtitle: "Care for Someone Else",
     icon: "👨‍👩‍👧",
     description: "Manage healthcare for a family member or loved one.",
-    page: "proxy-waitlist",
-    active: false,
+    page: "signup",
+    active: true,
     color: "#9CA3AF",
   },
   {
@@ -66,7 +66,7 @@ export default function RoleSelect() {
             {ROLES.map((role) => (
               <button
                 key={role.id}
-                onClick={() => navigate(role.page)}
+                onClick={() => navigate(role.page, role.id === "proxy" ? { accountRole: "proxy" } : {})}
                 disabled={!role.active}
                 className="p-6 rounded-2xl border text-left transition-all duration-200 group disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{

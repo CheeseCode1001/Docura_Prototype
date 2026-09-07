@@ -1,92 +1,40 @@
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
 import { Card, StatCard, SectionHeader, Avatar, Badge, Button, ProgressBar, C } from "@/components/ui";
-import { DOCTORS, DOCTOR_PATIENTS } from "@/data/mock";
+import { DOCTORS, DOCTOR_PATIENTS, FOLLOW_UPS, CARE_PLANS } from "@/data/mock";
+
+function Metric({ label, value, detail, page, color }: { label: string; value: string | number; detail: string; page: string; color?: string }) {
+  const { navigate } = useApp();
+  return <button onClick={() => navigate(page)} className="text-left"><StatCard label={label} value={value} icon={<span className="text-xs font-bold" style={{ color: C.navy }}>DOC</span>} sub={detail} color={color} /></button>;
+}
 
 export default function DoctorDashboard() {
-  const { navigate } = useApp();
+  const { navigate, domain } = useApp();
   const doc = DOCTORS[0];
+  const doctorConsultations = domain.consultations.filter((item) => item.doctorId === doc.id);
+  const doctorFollowUps = FOLLOW_UPS.filter((item) => item.doctorId === doc.id);
+  const dueFollowUps = doctorFollowUps.filter((item) => item.status === "upcoming").length;
+  const activePlans = CARE_PLANS.filter((item) => item.doctorId === doc.id && item.status === "active").length;
+  const unreadMessages = domain.messages.filter((item) => item.isDoctor === false && item.status === "unread").length;
+  const verification = domain.verificationDecisions.find((item) => item.id === "v1");
+  const verificationLabel = verification?.status === "approved" ? "Verified" : verification?.status === "rejected" ? "Restricted" : "Under review";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const attention = [
+    { title: "Docura Now request", detail: "Chidinma Eze is waiting to be seen", page: "doctor-consultations", tone: C.amber },
+    ...(dueFollowUps ? [{ title: "Follow-ups due", detail: `${dueFollowUps} patient follow-ups need review`, page: "doctor-follow-ups", tone: C.coral }] : []),
+    ...(unreadMessages ? [{ title: "Unread patient messages", detail: `${unreadMessages} conversations need a response`, page: "doctor-chat", tone: C.blue }] : []),
+    { title: "Verification status", detail: verificationLabel, page: "doctor-verification", tone: verification?.status === "approved" ? C.green : C.amber },
+  ];
 
   return (
-    <AppShell role="doctor">
-      <div className="px-4 md:px-6 py-6 flex flex-col gap-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm" style={{ color: C.muted }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
-            <h1 className="text-2xl font-bold mt-1" style={{ fontFamily: "var(--font-display)", color: C.navy }}>{greeting}, {doc.name} 👋</h1>
-          </div>
-          <div className="w-12 h-12 rounded-full overflow-hidden border-2" style={{ borderColor: C.amber }}>
-            <img src={doc.photo} alt={doc.name} className="w-full h-full object-cover" />
-          </div>
-        </div>
-
-        {/* Profile completeness */}
-        <div className="rounded-2xl p-4 border" style={{ borderColor: C.amber, backgroundColor: C.amberLight }}>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold" style={{ color: C.navy }}>Your profile is 85% complete</p>
-            <button className="text-xs font-semibold" style={{ color: C.amber }} onClick={() => navigate("doctor-profile-mgmt")}>Complete profile →</button>
-          </div>
-          <ProgressBar value={85} />
-          <p className="text-xs mt-2" style={{ color: C.muted }}>Add your bio and languages to complete your profile.</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Active care patients" value={3} icon={<span>👥</span>} sub="This month" />
-          <StatCard label="Pending consultations" value={1} icon={<span>⚡</span>} sub="Docura Now" color="#DBEAFE" />
-          <StatCard label="Earnings this month" value="₦45,000" icon={<span>💰</span>} sub="Net earnings" color="#DCFCE7" />
-          <StatCard label="Prescription reviews" value={2} icon={<span>📋</span>} sub="Awaiting review" color={C.amberLight} />
-        </div>
-
-        {/* Pending consultation alert */}
-        <div className="rounded-2xl p-4 flex items-center gap-4" style={{ backgroundColor: C.navy }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}>⚡</div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-white">Docura Now request</p>
-            <p className="text-xs text-white/60">Chidinma Eze is waiting for a consultation</p>
-          </div>
-          <Button size="sm" onClick={() => navigate("doctor-consultations")}>Review</Button>
-        </div>
-
-        {/* Active patients */}
-        <div>
-          <SectionHeader title="Active patients" action="See all" onAction={() => navigate("doctor-patients")} />
-          <div className="flex flex-col gap-3">
-            {DOCTOR_PATIENTS.slice(0, 3).map((p) => (
-              <Card key={p.id} onClick={() => navigate("doctor-patients")}>
-                <div className="flex items-center gap-3">
-                  <Avatar src={p.photo} name={p.name} size={44} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold" style={{ color: C.navy }}>{p.name}</p>
-                      {p.crossBorder && <Badge variant="amber">Cross-border</Badge>}
-                    </div>
-                    <p className="text-xs" style={{ color: C.muted }}>{p.country} · Last: {p.lastConsultation}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium" style={{ color: C.amber }}>{p.nextAction}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Earnings summary */}
-        <Card>
-          <SectionHeader title="Earnings summary" action="View all" onAction={() => navigate("doctor-earnings")} />
-          <div className="grid grid-cols-3 gap-3 text-center">
-            {[["Available", "₦45,000"], ["Pending", "₦12,000"], ["Last payout", "₦38,000"]].map(([l, v]) => (
-              <div key={l}>
-                <p className="text-xl font-bold" style={{ color: C.navy }}>{v}</p>
-                <p className="text-xs" style={{ color: C.muted }}>{l}</p>
-              </div>
-            ))}
-          </div>
-        </Card>
+    <AppShell role="doctor" topBarTitle="Clinical workspace">
+      <div className="px-4 md:px-6 py-6 flex flex-col gap-6" style={{ fontFamily: "var(--font-body)" }}>
+        <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-widest font-semibold" style={{ color: C.amber }}>Clinical workspace</p><h1 className="text-3xl font-bold mt-1" style={{ fontFamily: "var(--font-display)", color: C.navy }}>{greeting}, {doc.name}.</h1><p className="text-sm mt-1" style={{ color: C.muted }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })} · Focused care for every patient.</p></div><div className="flex items-center gap-3"><div className="text-right"><Badge variant={verification?.status === "approved" ? "green" : "amber"}>{verificationLabel}</Badge><p className="text-xs mt-1" style={{ color: C.muted }}>Online and accepting care</p></div><Avatar src={doc.photo} name={doc.name} size={48} /></div></div>
+        <div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => navigate("doctor-consultations")}>Start consultation</Button><Button size="sm" variant="outline" onClick={() => navigate("doctor-patients")}>View patients</Button><Button size="sm" variant="outline" onClick={() => navigate("doctor-care-plans")}>Create care plan</Button><Button size="sm" variant="outline" onClick={() => navigate("doctor-follow-ups")}>Schedule follow-up</Button></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><Metric label="Consultations" value={doctorConsultations.length} detail="Doctor history" page="doctor-consultations" /><Metric label="Active patients" value={DOCTOR_PATIENTS.length} detail="Care relationships" page="doctor-patients" color="#DCFCE7" /><Metric label="Follow-ups due" value={dueFollowUps} detail="Needs review" page="doctor-follow-ups" color="#FEE2E2" /><Metric label="Active care plans" value={activePlans} detail="Patient plans" page="doctor-care-plans" color={C.amberLight} /></div>
+        <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-5 items-start"><Card><SectionHeader title="Today's care" action="All consultations" onAction={() => navigate("doctor-consultations")} /><div className="flex flex-col divide-y" style={{ borderColor: C.border }}><div className="py-4 flex flex-wrap items-center gap-3"><div className="w-12 text-center"><p className="text-xs font-bold" style={{ color: C.navy }}>Now</p><p className="text-[11px]" style={{ color: C.muted }}>12:30</p></div><Avatar name="Chidinma Eze" size={38} /><div className="flex-1 min-w-[160px]"><p className="text-sm font-semibold" style={{ color: C.navy }}>Chidinma Eze</p><p className="text-xs" style={{ color: C.muted }}>Docura Now · Persistent stomach pain</p></div><Badge variant="green">Paid · Waiting</Badge><Button size="sm" onClick={() => navigate("doctor-consultations")}>Open</Button></div>{DOCTOR_PATIENTS.slice(0, 2).map((patient) => <div key={patient.id} className="py-4 flex flex-wrap items-center gap-3"><div className="w-12 text-center"><p className="text-xs font-bold" style={{ color: C.navy }}>Next</p><p className="text-[11px]" style={{ color: C.muted }}>Today</p></div><Avatar src={patient.photo} name={patient.name} size={38} /><div className="flex-1 min-w-[160px]"><p className="text-sm font-semibold" style={{ color: C.navy }}>{patient.name}</p><p className="text-xs" style={{ color: C.muted }}>{patient.type === "care" ? "Docura Care" : "Docura Now"} · {patient.nextAction}</p></div><Badge variant="amber">Upcoming</Badge><Button size="sm" variant="outline" onClick={() => navigate("doctor-patients")}>Record</Button></div>)}</div></Card><Card><SectionHeader title="Needs your attention" action="View queue" onAction={() => navigate("doctor-consultations")} /><div className="flex flex-col gap-2">{attention.map((item) => <button key={item.title} onClick={() => navigate(item.page)} className="text-left p-3 rounded-xl border hover:border-amber-300 transition-colors" style={{ borderColor: C.border }}><div className="flex items-start gap-3"><span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: item.tone }} /><div><p className="text-sm font-semibold" style={{ color: C.navy }}>{item.title}</p><p className="text-xs mt-0.5" style={{ color: C.muted }}>{item.detail}</p></div></div></button>)}</div></Card></div>
+        <div className="grid lg:grid-cols-3 gap-5"><Card><SectionHeader title="Patients" action="Manage" onAction={() => navigate("doctor-patients")} />{DOCTOR_PATIENTS.slice(0, 3).map((patient) => <button key={patient.id} onClick={() => navigate("doctor-patients")} className="w-full flex items-center gap-3 py-3 border-b last:border-0 text-left" style={{ borderColor: C.border }}><Avatar src={patient.photo} name={patient.name} size={34} /><div className="flex-1 min-w-0"><p className="text-sm font-semibold truncate" style={{ color: C.navy }}>{patient.name}</p><p className="text-xs truncate" style={{ color: C.muted }}>{patient.nextAction}</p></div>{patient.crossBorder && <Badge variant="amber">Cross-border</Badge>}</button>)}</Card><Card><SectionHeader title="Follow-ups" action="Open queue" onAction={() => navigate("doctor-follow-ups")} />{doctorFollowUps.slice(0, 3).map((followUp) => <button key={followUp.id} onClick={() => navigate("doctor-follow-ups")} className="w-full text-left py-3 border-b last:border-0" style={{ borderColor: C.border }}><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold" style={{ color: C.navy }}>{followUp.scheduledDate}</p><Badge variant={followUp.status === "completed" ? "green" : "amber"}>{followUp.status}</Badge></div><p className="text-xs mt-1 truncate" style={{ color: C.muted }}>{followUp.reason}</p></button>)}</Card><Card><SectionHeader title="Practice pulse" action="Earnings" onAction={() => navigate("doctor-earnings")} /><div className="flex flex-col gap-4"><div><div className="flex justify-between text-sm"><span style={{ color: C.muted }}>Follow-up completion</span><strong style={{ color: C.navy }}>82%</strong></div><ProgressBar value={82} /></div><div className="flex justify-between text-sm"><span style={{ color: C.muted }}>Unread messages</span><strong style={{ color: C.navy }}>{unreadMessages}</strong></div><div className="flex justify-between text-sm"><span style={{ color: C.muted }}>Net earnings</span><strong style={{ color: C.navy }}>N45,000</strong></div><Button size="sm" variant="outline" onClick={() => navigate("doctor-earnings")}>View payouts</Button></div></Card></div>
       </div>
     </AppShell>
   );

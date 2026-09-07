@@ -22,10 +22,11 @@ function Ico({ type }: { type: string }) {
 }
 
 export default function PatientDashboard() {
-  const { navigate } = useApp();
+  const { navigate, domain } = useApp();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const doc = DOCTORS.find((d) => d.id === PATIENT.personalDoctorId)!;
+  const activeSubscription = domain.subscriptions.find((subscription) => subscription.patientId === PATIENT.id && subscription.status === "active");
+  const doc = DOCTORS.find((d) => d.id === (activeSubscription?.doctorId || PATIENT.personalDoctorId))!;
   const prescDoc = DOCTORS.find((d) => d.id === PATIENT.prescribingDoctorId)!;
   const activePlan = CARE_PLANS.find((p) => p.status === "active");
   const upcomingFollowUp = FOLLOW_UPS.find((f) => f.status === "upcoming");
@@ -200,13 +201,13 @@ export default function PatientDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-sm font-bold" style={{ color: C.navy }}>Recent Consultations</p>
-                  <p className="text-xs mt-0.5" style={{ color: "#a0a9bc" }}>{CONSULTATIONS.length} total this year</p>
+                  <p className="text-xs mt-0.5" style={{ color: "#a0a9bc" }}>{domain.consultations.length} total this year</p>
                 </div>
                 <button onClick={() => navigate("patient-consultations")} className="text-xs font-semibold hover:opacity-70" style={{ color: C.amber }}>See all →</button>
               </div>
 
               <div className="flex flex-col divide-y" style={{ "--tw-divide-opacity": 1 } as React.CSSProperties}>
-                {CONSULTATIONS.slice(0, 5).map((c) => {
+                {domain.consultations.slice(-5).reverse().map((c) => {
                   const dr = DOCTORS.find((d) => d.id === c.doctorId)!;
                   const isNow = c.type === "now";
                   return (

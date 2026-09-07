@@ -155,14 +155,14 @@ function SuccessStep({ doctorId, onDone }: { doctorId: string; onDone: () => voi
 }
 
 export default function DocuraCare() {
-  const { params, navigate } = useApp();
+  const { params, navigate, activateSubscription } = useApp();
   const doctorId = params.doctorId || "d1";
   const [step, setStep] = useState<Step>("choose");
 
   return (
     <AppShell role="patient" topBarTitle="Docura Care" showTopBarBack>
       {step === "choose" && <ChooseStep doctorId={doctorId} onNext={() => setStep("payment")} />}
-      {step === "payment" && <PaymentStep doctorId={doctorId} onPay={() => setStep("success")} />}
+      {step === "payment" && <PaymentStep doctorId={doctorId} onPay={() => { const doctor = DOCTORS.find((item) => item.id === doctorId) || DOCTORS[0]; activateSubscription({ doctorId, price: doctor.monthlyPrice, currency: doctor.currency }); setStep("success"); }} />}
       {step === "success" && <SuccessStep doctorId={doctorId} onDone={() => navigate("patient-chat")} />}
     </AppShell>
   );

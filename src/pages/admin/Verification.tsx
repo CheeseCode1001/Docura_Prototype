@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
 import { Card, Badge, Button, Avatar, C, Modal, AlertBanner, Table } from "@/components/ui";
 import { PENDING_VERIFICATIONS } from "@/data/mock";
@@ -48,15 +49,20 @@ function VerificationDetail({ doc, onApprove, onReject, onRequest }: { doc: Veri
 }
 
 export default function AdminVerification() {
+  const { domain, updateVerification, addToast } = useApp();
   const [selected, setSelected] = useState<VerifDoc | null>(null);
   const [doneIds, setDoneIds] = useState<string[]>([]);
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
   const [confirmNote, setConfirmNote] = useState("");
 
-  const pending = PENDING_VERIFICATIONS.filter((v) => !doneIds.includes(v.id));
+  const pending = PENDING_VERIFICATIONS.filter((v) => !doneIds.includes(v.id) && !domain.verificationDecisions.some((decision) => decision.id === v.id && decision.status !== "more-info-required"));
 
   const handleAction = (action: "approve" | "reject") => {
-    if (selected) setDoneIds((d) => [...d, selected.id]);
+    if (selected) {
+      updateVerification({ id: selected.id, status: action === "approve" ? "approved" : "rejected", note: confirmNote });
+      setDoneIds((d) => [...d, selected.id]);
+      addToast(action === "approve" ? "success" : "warning", action === "approve" ? `${selected.name} is now approved.` : `${selected.name}'s application was rejected.`);
+    }
     setSelected(null);
     setConfirmAction(null);
   };
@@ -93,7 +99,7 @@ export default function AdminVerification() {
             doc={selected}
             onApprove={() => setConfirmAction("approve")}
             onReject={() => setConfirmAction("reject")}
-            onRequest={() => { setDoneIds((d) => [...d, selected.id]); setSelected(null); }}
+            onRequest={() => { updateVerification({ id: selected.id, status: "more-info-required" }); addToast("info", `More information requested from ${selected.name}.`); setDoneIds((d) => [...d, selected.id]); setSelected(null); }}
           />
         )}
       </Modal>

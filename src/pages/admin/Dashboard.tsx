@@ -1,75 +1,34 @@
+import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Card, StatCard, Badge, Button, C, Table } from "@/components/ui";
-import { PENDING_VERIFICATIONS, CROSS_BORDER_CASES, ADMIN_PAYOUTS, ADMIN_DISPUTES } from "@/data/mock";
+import { Card, StatCard, Badge, Button, C, Avatar } from "@/components/ui";
+import { DOCTORS, DOCTOR_PATIENTS, PATIENT, PENDING_VERIFICATIONS, CROSS_BORDER_CASES, ADMIN_PAYOUTS, ADMIN_DISPUTES, PAYMENTS } from "@/data/mock";
+
+function AdminMetric({ label, value, detail, page, color }: { label: string; value: string | number; detail: string; page: string; color?: string }) {
+  const { navigate } = useApp();
+  return <button className="text-left" onClick={() => navigate(page)}><StatCard label={label} value={value} icon={<span className="text-xs font-bold" style={{ color: C.navy }}>OPS</span>} sub={detail} color={color} /></button>;
+}
 
 export default function AdminDashboard() {
-  const { navigate } = useApp();
+  const { navigate, domain } = useApp();
+  const [query, setQuery] = useState("");
+  const pendingVerifications = PENDING_VERIFICATIONS.filter((item) => !domain.verificationDecisions.some((decision) => decision.id === item.id && decision.status !== "more-info-required"));
+  const paymentStatus = (payment: typeof PAYMENTS[number]) => domain.paymentOverrides.find((item) => item.id === payment.id)?.status || payment.status;
+  const pendingPayments = PAYMENTS.filter((payment) => paymentStatus(payment) === "pending").length;
+  const openDisputes = ADMIN_DISPUTES.filter((item) => item.status !== "resolved").length;
+  const searchResults = [...DOCTORS.map((item) => ({ label: item.name, detail: `Doctor · ${item.specialty}`, page: "admin-doctors" })), ...DOCTOR_PATIENTS.map((item) => ({ label: item.name, detail: `Patient · ${item.country}`, page: "admin-patients" }))].filter((item) => `${item.label} ${item.detail}`.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <AppShell role="admin" topBarTitle="Admin — Overview">
-      <div className="px-4 md:px-6 py-6 flex flex-col gap-6">
-        <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Docura Admin</h1>
-          <p className="text-sm" style={{ color: C.muted }}>Internal dashboard · {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</p>
-        </div>
+    <AppShell role="admin" topBarTitle="Operations center">
+      <div className="px-4 md:px-6 py-6 flex flex-col gap-6" style={{ fontFamily: "var(--font-body)" }}>
+        <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs uppercase tracking-widest font-semibold" style={{ color: C.amber }}>Docura operations</p><h1 className="text-3xl font-bold mt-1" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Platform overview</h1><p className="text-sm mt-1" style={{ color: C.muted }}>Operational health across care, trust, and finance.</p></div><Badge variant="green">All systems operational</Badge></div>
+        <div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => navigate("admin-verification")}>Review verification</Button><Button size="sm" variant="outline" onClick={() => navigate("admin-crossborder")}>Assign prescribing doctor</Button><Button size="sm" variant="outline" onClick={() => navigate("admin-payouts")}>Process payouts</Button><Button size="sm" variant="outline" onClick={() => navigate("admin-refunds")}>Find a transaction</Button></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><AdminMetric label="Patients" value={DOCTOR_PATIENTS.length + 1} detail="Active accounts" page="admin-patients" color="#DCFCE7" /><AdminMetric label="Doctors" value={DOCTORS.length} detail="Registered professionals" page="admin-doctors" color="#DBEAFE" /><AdminMetric label="Pending verification" value={pendingVerifications.length} detail="Needs review" page="admin-verification" color={C.amberLight} /><AdminMetric label="Active consultations" value={domain.consultations.filter((item) => item.status !== "cancelled").length} detail="Shared care record" page="admin-prescriptions" /></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><AdminMetric label="Care relationships" value={domain.subscriptions.length || 1} detail="Active subscriptions" page="admin-patients" /><AdminMetric label="Pending payments" value={pendingPayments} detail="Requires attention" page="admin-refunds" color={pendingPayments ? "#FEE2E2" : undefined} /><AdminMetric label="Pending payouts" value={ADMIN_PAYOUTS.filter((item) => item.status === "requested").length} detail="Awaiting processing" page="admin-payouts" /><AdminMetric label="Open disputes" value={openDisputes} detail="Trust queue" page="admin-disputes" color="#FEE2E2" /></div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <StatCard label="Pending verifications" value={PENDING_VERIFICATIONS.length} icon={<span>🔍</span>} sub="Needs review" />
-          <StatCard label="Active patients" value={48} icon={<span>👥</span>} sub="All time" color="#DCFCE7" />
-          <StatCard label="Active doctors" value={12} icon={<span>🩺</span>} sub="Verified" color="#DBEAFE" />
-          <StatCard label="Cross-border cases" value={CROSS_BORDER_CASES.length} icon={<span>🌍</span>} sub="Active" />
-          <StatCard label="Pending payouts" value={ADMIN_PAYOUTS.filter((p) => p.status === "requested").length} icon={<span>💰</span>} sub="Awaiting processing" />
-          <StatCard label="Open disputes" value={ADMIN_DISPUTES.filter((d) => d.status === "open").length} icon={<span>⚠️</span>} sub="Need attention" color="#FEE2E2" />
-        </div>
+        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-5 items-start"><Card><div className="flex items-center justify-between gap-3 mb-4"><div><h2 className="font-bold" style={{ color: C.navy }}>Verification queue</h2><p className="text-xs mt-1" style={{ color: C.muted }}>{pendingVerifications.length} applications waiting for an operations decision.</p></div><Button size="sm" variant="outline" onClick={() => navigate("admin-verification")}>Open queue</Button></div><div className="flex flex-col gap-2">{pendingVerifications.slice(0, 3).map((doctor) => <button key={doctor.id} onClick={() => navigate("admin-verification")} className="w-full text-left flex items-center gap-3 p-3 rounded-xl border hover:border-amber-300" style={{ borderColor: C.border }}><Avatar src={doctor.photo} name={doctor.name} size={38} /><div className="flex-1"><p className="text-sm font-semibold" style={{ color: C.navy }}>{doctor.name}</p><p className="text-xs" style={{ color: C.muted }}>{doctor.specialty} · {doctor.country}</p></div><Badge variant={doctor.status === "more-info-required" ? "yellow" : "amber"}>{doctor.status.replace(/-/g, " ")}</Badge></button>)}</div></Card><Card><div className="flex items-center justify-between gap-3 mb-4"><div><h2 className="font-bold" style={{ color: C.navy }}>Global search</h2><p className="text-xs mt-1" style={{ color: C.muted }}>Search authorized patient and doctor records.</p></div></div><input aria-label="Search platform records" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, specialty, country..." className="w-full rounded-xl border px-4 py-3 text-sm outline-none mb-3" style={{ borderColor: C.border }} />{query && <div className="flex flex-col gap-2">{searchResults.length ? searchResults.slice(0, 4).map((result) => <button key={`${result.page}-${result.label}`} onClick={() => navigate(result.page)} className="text-left p-3 rounded-xl" style={{ backgroundColor: C.warm }}><p className="text-sm font-semibold" style={{ color: C.navy }}>{result.label}</p><p className="text-xs" style={{ color: C.muted }}>{result.detail}</p></button>) : <p className="text-sm py-3" style={{ color: C.muted }}>No authorized records found.</p>}</div>}</Card></div>
 
-        {/* Pending verifications */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Doctor verification queue</h2>
-            <Button size="sm" variant="outline" onClick={() => navigate("admin-verification")}>View all</Button>
-          </div>
-          <Table
-            headers={["Doctor", "Specialty", "Country", "License", "Submitted", "Status", ""]}
-            rows={PENDING_VERIFICATIONS.map((v) => [
-              <div className="flex items-center gap-2">
-                <img src={v.photo} alt={v.name} className="w-8 h-8 rounded-full object-cover" />
-                <span style={{ color: C.navy }}>{v.name}</span>
-              </div>,
-              v.specialty,
-              v.country,
-              v.license,
-              v.submitted,
-              <Badge variant={v.status === "under-review" ? "amber" : v.status === "more-info-required" ? "yellow" : "blue"}>{v.status.replace(/-/g, " ")}</Badge>,
-              <Button size="sm" onClick={() => navigate("admin-verification")}>Review</Button>,
-            ])}
-          />
-        </div>
-
-        {/* Cross-border cases */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Cross-border cases</h2>
-            <Button size="sm" variant="outline" onClick={() => navigate("admin-crossborder")}>View all</Button>
-          </div>
-          <div className="flex flex-col gap-3">
-            {CROSS_BORDER_CASES.map((cb) => (
-              <Card key={cb.id}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-sm" style={{ color: C.navy }}>{cb.patient}</p>
-                    <p className="text-xs" style={{ color: C.muted }}>via {cb.personalDoctor} · {cb.patientCountry} → {cb.prescribingCountry}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={cb.status === "assigned" ? "green" : "amber"}>{cb.status.replace(/-/g, " ")}</Badge>
-                    {cb.status !== "assigned" && <Button size="sm" onClick={() => navigate("admin-crossborder")}>Assign doctor</Button>}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
+        <div className="grid lg:grid-cols-3 gap-5"><Card><div className="flex items-center justify-between mb-4"><h2 className="font-bold" style={{ color: C.navy }}>Cross-border care</h2><Button size="sm" variant="outline" onClick={() => navigate("admin-crossborder")}>Manage</Button></div>{CROSS_BORDER_CASES.slice(0, 2).map((item) => <button key={item.id} onClick={() => navigate("admin-crossborder")} className="w-full text-left py-3 border-b last:border-0" style={{ borderColor: C.border }}><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold" style={{ color: C.navy }}>{item.patient}</p><Badge variant={item.status === "assigned" ? "green" : "amber"}>{item.status.replace(/-/g, " ")}</Badge></div><p className="text-xs mt-1" style={{ color: C.muted }}>{item.patientCountry} to {item.prescribingCountry}</p></button>)}</Card><Card><div className="flex items-center justify-between mb-4"><h2 className="font-bold" style={{ color: C.navy }}>Finance watch</h2><Button size="sm" variant="outline" onClick={() => navigate("admin-payouts")}>Open finance</Button></div><div className="flex flex-col gap-3 text-sm"><div className="flex justify-between"><span style={{ color: C.muted }}>Transactions</span><strong style={{ color: C.navy }}>{PAYMENTS.length}</strong></div><div className="flex justify-between"><span style={{ color: C.muted }}>Payout requests</span><strong style={{ color: C.navy }}>{ADMIN_PAYOUTS.filter((item) => item.status === "requested").length}</strong></div><div className="flex justify-between"><span style={{ color: C.muted }}>Disputes</span><strong style={{ color: C.coral }}>{openDisputes}</strong></div><Button size="sm" variant="outline" onClick={() => navigate("admin-refunds")}>Review transactions</Button></div></Card><Card><div className="flex items-center justify-between mb-4"><h2 className="font-bold" style={{ color: C.navy }}>Activity</h2><Button size="sm" variant="outline" onClick={() => navigate("admin-audit-log")}>Audit log</Button></div>{domain.activity.length ? domain.activity.slice(0, 4).map((event) => <div key={event.id} className="py-2.5 border-b last:border-0" style={{ borderColor: C.border }}><p className="text-sm font-semibold" style={{ color: C.navy }}>{event.title}</p><p className="text-xs mt-0.5" style={{ color: C.muted }}>{event.detail}</p></div>) : <p className="text-sm" style={{ color: C.muted }}>Operational actions will appear here as teams process the queue.</p>}</Card></div>
       </div>
     </AppShell>
   );

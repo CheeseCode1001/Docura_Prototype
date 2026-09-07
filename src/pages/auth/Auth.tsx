@@ -326,9 +326,9 @@ function PhotoPanel({ view, slide, onSlide }: { view: AuthView; slide: number; o
 // ── Main export ─────────────────────────────────────────────
 
 export default function AuthLayout({ initialView = "login" }: { initialView?: AuthView }) {
-  const { navigate, setRole } = useApp();
+  const { navigate, setRole, params, markOnboardingComplete } = useApp();
   const [view, setView] = useState<AuthView>(initialView);
-  const [accountRole] = useState<"patient" | "doctor">(initialView.includes("doctor") ? "doctor" : "patient");
+  const [accountRole] = useState<"patient" | "doctor" | "proxy">(params.accountRole === "proxy" ? "proxy" : initialView.includes("doctor") ? "doctor" : "patient");
   const [visible, setVisible] = useState(true);
   const [slide, setSlide] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -407,8 +407,8 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
                 </button>
               </div>
               <Btn loading={loading} onClick={() => fakeLoad(() => {
-                if (isDoctor) { setRole("doctor"); navigate("doctor-dashboard"); }
-                else { setRole("patient"); navigate("patient-dashboard"); }
+                if (isDoctor) { setRole("doctor"); markOnboardingComplete(); navigate("doctor-dashboard"); }
+                else { setRole(accountRole); markOnboardingComplete(); navigate(`${accountRole}-dashboard`); }
               })}>
                 Sign in
               </Btn>
@@ -589,6 +589,7 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
             <div className="flex flex-col gap-3 mb-6">
               {[
                 { id: "personal", title: "Personal Care", desc: "For your own healthcare journey.", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg> },
+                { id: "proxy", title: "Care for someone else", desc: "Coordinate care for a parent, child, or loved one.", icon: <span aria-hidden="true">♥</span> },
                 { id: "enterprise", title: "Enterprise / Organisation", desc: "For organisations managing healthcare access.", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></svg> },
               ].map((opt) => {
                 const sel = selectedAccType === opt.id;
@@ -788,8 +789,8 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
               Your profile is ready. {"Let's"} find the right care for you.
             </p>
             <div className="w-full flex flex-col gap-2.5">
-              <Btn onClick={() => { const nextRole = selectedAccType === "enterprise" ? "enterprise" : accountRole; setRole(nextRole); navigate(`${nextRole}-dashboard`); }}>Explore Docura</Btn>
-              <Btn variant="outline" onClick={() => { const nextRole = selectedAccType === "enterprise" ? "enterprise" : accountRole; setRole(nextRole); navigate(nextRole === "patient" ? "find-doctor" : `${nextRole}-dashboard`); }}>Continue</Btn>
+              <Btn onClick={() => { const nextRole = selectedAccType === "enterprise" ? "enterprise" : selectedAccType === "proxy" ? "proxy" : accountRole; setRole(nextRole); markOnboardingComplete(); navigate(`${nextRole}-dashboard`); }}>Explore Docura</Btn>
+              <Btn variant="outline" onClick={() => { const nextRole = selectedAccType === "enterprise" ? "enterprise" : selectedAccType === "proxy" ? "proxy" : accountRole; setRole(nextRole); markOnboardingComplete(); navigate(nextRole === "patient" ? "find-doctor" : `${nextRole}-dashboard`); }}>Continue</Btn>
             </div>
           </div>
         );

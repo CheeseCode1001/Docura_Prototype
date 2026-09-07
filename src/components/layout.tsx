@@ -187,11 +187,11 @@ const ADMIN_SIDEBAR_GROUPS: NavGroup[] = [
 
 // ─── Sidebar (grouped, desktop) ───────────────────────────────────────────────
 export function Sidebar({ role }: { role: UserRole }) {
-  const { page, navigate, setRole } = useApp();
+  const { page, navigate, signOut } = useApp();
   const [mobileOpen, setMobileOpen] = useState(false);
   const patientName = "Adaeze Okafor";
   const doctorName = "Dr. Amara Osei";
-  const groups = role === "patient" ? PATIENT_SIDEBAR_GROUPS : role === "doctor" ? DOCTOR_SIDEBAR_GROUPS : role === "enterprise" ? ENTERPRISE_SIDEBAR_GROUPS : ADMIN_SIDEBAR_GROUPS;
+  const groups = role === "patient" || role === "proxy" ? PATIENT_SIDEBAR_GROUPS : role === "doctor" ? DOCTOR_SIDEBAR_GROUPS : role === "enterprise" ? ENTERPRISE_SIDEBAR_GROUPS : ADMIN_SIDEBAR_GROUPS;
 
   return (
     <>
@@ -235,7 +235,7 @@ export function Sidebar({ role }: { role: UserRole }) {
               </div>
             </button>
           )}
-          <button onClick={() => { setRole(null); navigate("landing"); setMobileOpen(false); }} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium w-full text-left hover:bg-red-50 transition-colors" style={{ color: C.coral, fontFamily: "var(--font-body)" }}>
+          <button onClick={() => { signOut(); setMobileOpen(false); }} className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium w-full text-left hover:bg-red-50 transition-colors" style={{ color: C.coral, fontFamily: "var(--font-body)" }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" /></svg>
             Sign out
           </button>
@@ -306,7 +306,7 @@ export function TopBar({ title, back, actions }: { title?: string; back?: boolea
 
 // ─── AppShell ─────────────────────────────────────────────────────────────────
 export function AppShell({ role, children, topBarTitle, showTopBarBack }: { role: UserRole; children: ReactNode; topBarTitle?: string; showTopBarBack?: boolean }) {
-  const nav = role === "patient" ? PATIENT_NAV : role === "doctor" ? DOCTOR_NAV : role === "enterprise" ? ENTERPRISE_NAV : ADMIN_NAV;
+  const nav = role === "patient" || role === "proxy" ? PATIENT_NAV : role === "doctor" ? DOCTOR_NAV : role === "enterprise" ? ENTERPRISE_NAV : ADMIN_NAV;
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: C.warm }}>
       <Sidebar role={role} />

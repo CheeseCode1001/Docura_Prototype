@@ -232,7 +232,7 @@ function CompleteStep({ doctorId, onContinueCare, onDone }: { doctorId: string; 
 }
 
 export default function DocuraNow() {
-  const { navigate } = useApp();
+  const { navigate, createConsultation } = useApp();
   const [step, setStep] = useState<Step>("symptoms");
   const [doctorId, setDoctorId] = useState("d1");
 
@@ -241,7 +241,7 @@ export default function DocuraNow() {
       {step === "symptoms" && <SymptomsStep onNext={() => setStep("doctors")} />}
       {step === "doctors" && <DoctorsStep onSelect={(id) => { setDoctorId(id); setStep("payment"); }} />}
       {step === "payment" && <PaymentStep doctorId={doctorId} onPay={() => setStep("chat")} />}
-      {step === "chat" && <ConsultationChat doctorId={doctorId} onComplete={() => setStep("complete")} />}
+      {step === "chat" && <ConsultationChat doctorId={doctorId} onComplete={() => { createConsultation({ doctorId, type: "now", price: DOCTORS.find((doctor) => doctor.id === doctorId)?.consultationPrice ?? 0, currency: DOCTORS.find((doctor) => doctor.id === doctorId)?.currency ?? "₦" }); setStep("complete"); }} />}
       {step === "complete" && <CompleteStep doctorId={doctorId} onContinueCare={() => navigate("patient-care", { doctorId })} onDone={() => navigate("patient-dashboard")} />}
     </AppShell>
   );

@@ -1,19 +1,50 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
 import { Card, Badge, Tabs, C } from "@/components/ui";
-import { PATIENT, CONSULTATIONS, PRESCRIPTIONS, DOCTORS } from "@/data/mock";
+import { PATIENT, DOCTORS } from "@/data/mock";
+import { useApp } from "@/context/AppContext";
 
-const TIMELINE = [
-  { date: "2025-08-28", type: "consultation", title: "Consultation with Dr. Amara Osei", body: "Routine diabetes management. HbA1c improving.", icon: "🩺", color: C.amberLight },
-  { date: "2025-08-28", type: "prescription", title: "Prescription issued", body: "Metformin 500mg · Twice daily · 3 months", icon: "💊", color: "#DCFCE7" },
-  { date: "2025-08-10", type: "consultation", title: "Consultation with Dr. Fatima Bello", body: "Skin rash assessment. Mild eczema diagnosed.", icon: "🩺", color: C.amberLight },
-  { date: "2025-08-10", type: "prescription", title: "Prescription issued", body: "Hydrocortisone Cream 1% · Twice daily · 2 weeks", icon: "💊", color: "#DCFCE7" },
-  { date: "2025-07-20", type: "note", title: "Doctor's note from Dr. Amara Osei", body: "Blood pressure stable. Continue Lisinopril 10mg. Monthly monitoring advised.", icon: "📝", color: "#DBEAFE" },
-  { date: "2025-07-15", type: "consultation", title: "Consultation with Dr. Amara Osei", body: "Monthly check-in. Blood pressure monitoring — all within normal range.", icon: "🩺", color: C.amberLight },
-];
+interface TimelineItem {
+  key: string;
+  date: string;
+  title: string;
+  body: string;
+  icon: string;
+  color: string;
+}
 
 export default function HealthRecord() {
+  const { domain } = useApp();
   const [tab, setTab] = useState("Snapshot");
+
+  // The timeline is derived from live records, so a consultation completed or a
+  // prescription issued in this session appears here immediately.
+  const timeline: TimelineItem[] = [
+    ...domain.consultations.map((consultation) => ({
+      key: `c-${consultation.id}`,
+      date: consultation.date,
+      title: `Consultation with ${DOCTORS.find((doctor) => doctor.id === consultation.doctorId)?.name || "your doctor"}`,
+      body: consultation.summary,
+      icon: "🩺",
+      color: C.amberLight,
+    })),
+    ...domain.prescriptions.map((prescription) => ({
+      key: `rx-${prescription.id}`,
+      date: prescription.date,
+      title: "Prescription issued",
+      body: `${prescription.medication} ${prescription.dosage} · ${prescription.frequency} · ${prescription.duration}`,
+      icon: "💊",
+      color: "#DCFCE7",
+    })),
+    ...domain.followUps.map((followUp) => ({
+      key: `fu-${followUp.id}`,
+      date: followUp.scheduledDate,
+      title: `Follow-up ${followUp.status}`,
+      body: followUp.reason,
+      icon: "📅",
+      color: "#DBEAFE",
+    })),
+  ].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <AppShell role="patient" topBarTitle="Health record">
@@ -73,8 +104,8 @@ export default function HealthRecord() {
           <div className="mt-5 relative">
             <div className="absolute left-5 top-0 bottom-0 w-0.5" style={{ backgroundColor: C.border }} />
             <div className="flex flex-col gap-6">
-              {TIMELINE.map((item, i) => (
-                <div key={i} className="flex gap-4 pl-2">
+              {timeline.map((item) => (
+                <div key={item.key} className="flex gap-4 pl-2">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg z-10" style={{ backgroundColor: item.color }}>
                     {item.icon}
                   </div>

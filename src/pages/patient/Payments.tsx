@@ -1,12 +1,25 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Card, Badge, Button, C, Modal } from "@/components/ui";
-import { PAYMENTS } from "@/data/mock";
+import { Card, Badge, Button, C, EmptyState, Modal } from "@/components/ui";
+import { useApp } from "@/context/AppContext";
+import { api } from "@/services/api";
+import type { Payment } from "@/data/types";
 
-const statusBadge: Record<string, "green" | "amber" | "red" | "gray"> = { paid: "green", pending: "amber", failed: "red", refunded: "gray" };
+const statusBadge: Record<string, "green" | "amber" | "red" | "gray"> = { paid: "green", pending: "amber", failed: "red", refunded: "gray", disputed: "red" };
 
 export default function Payments() {
-  const [selected, setSelected] = useState<typeof PAYMENTS[0] | null>(null);
+  const { domain, navigate } = useApp();
+  const [selected, setSelected] = useState<Payment | null>(null);
+
+  // Seeded history plus anything paid during this session, with admin status
+  // overrides applied so a refund shows the same everywhere.
+  const payments: Payment[] = [...domain.extraPayments, ...api.payments()]
+    .map((payment) => ({ ...payment, status: domain.paymentOverrides.find((item) => item.id === payment.id)?.status || payment.status }))
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const subscription = domain.subscriptions[0];
+  const subscriptionDoctor = subscription ? api.doctor(subscription.doctorId) : undefined;
+  const totalPaid = payments.filter((payment) => payment.status === "paid" && payment.currency === "₦").reduce((sum, payment) => sum + payment.amount, 0);
 
   return (
     <AppShell role="patient" topBarTitle="Payments">
@@ -14,18 +27,23 @@ export default function Payments() {
         <div className="grid grid-cols-2 gap-3">
           <Card>
             <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: C.muted }}>Total paid</p>
-            <p className="text-2xl font-bold" style={{ color: C.navy }}>₦49,500</p>
-            <p className="text-xs mt-1" style={{ color: C.muted }}>All time</p>
+            <p className="text-2xl font-bold" style={{ color: C.navy }}>₦{totalPaid.toLocaleString()}</p>
+            <p className="text-xs mt-1" style={{ color: C.muted }}>{payments.length} transaction{payments.length === 1 ? "" : "s"}</p>
           </Card>
           <Card>
             <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: C.muted }}>Active subscription</p>
-            <p className="text-lg font-bold" style={{ color: C.amber }}>₦15,000/mo</p>
-            <p className="text-xs mt-1" style={{ color: C.muted }}>Dr. Amara Osei</p>
+            <p className="text-lg font-bold" style={{ color: C.amber }}>
+              {subscription ? `${subscription.currency}${subscription.price.toLocaleString()}/mo` : "None active"}
+            </p>
+            <p className="text-xs mt-1" style={{ color: C.muted }}>{subscriptionDoctor?.name || "Start Docura Care to add one"}</p>
           </Card>
         </div>
 
         <div className="flex flex-col gap-3">
-          {PAYMENTS.map((pay) => (
+          {payments.length === 0 && (
+            <EmptyState icon="💳" title="No payments yet" body="Receipts for consultations and care subscriptions appear here." cta="Find a doctor" onCta={() => navigate("find-doctor")} />
+          )}
+          {payments.map((pay) => (
             <Card key={pay.id} onClick={() => setSelected(pay)}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">

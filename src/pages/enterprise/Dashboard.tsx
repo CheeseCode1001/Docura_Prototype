@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Avatar, C } from "@/components/ui";
+import { Avatar, Button, C, Card, Input, Modal } from "@/components/ui";
 
 const CARD = { backgroundColor: "white", border: "1px solid rgba(21,95,84,0.08)", borderRadius: 20, boxShadow: "0 12px 32px rgba(21,95,84,0.05)" };
 const BG = "#FAFAF7";
@@ -77,16 +77,33 @@ function Ico({ type }: { type: string }) {
   }
 }
 
+
+function CardView({ view, members, programs, activity, onInvite, onNavigate, onToast }: { view: string; members: { name: string; email?: string; dept: string; status: string; lastSeen: string }[]; programs: { name: string; members: number; enrolled: number; color: string }[]; activity: { text: string; time: string; type: string }[]; onInvite: () => void; onNavigate: (page: string, params?: Record<string, string>) => void; onToast: (message: string) => void }) {
+  if (view === "members") return <Card><div className="flex items-center justify-between mb-4"><div><h2 className="font-bold" style={{ color: C.navy }}>All members</h2><p className="text-xs mt-1" style={{ color: C.muted }}>Review enrolment and member status.</p></div><Button size="sm" onClick={onInvite}>Invite member</Button></div><div className="grid md:grid-cols-2 gap-3">{members.map((member) => <div key={`${member.name}-${member.email || member.dept}`} className="flex items-center gap-3 rounded-xl border p-3" style={{ borderColor: C.border }}><Avatar name={member.name} size={36} /><div className="flex-1"><p className="text-sm font-semibold" style={{ color: C.navy }}>{member.name}</p><p className="text-xs" style={{ color: C.muted }}>{member.dept} · {member.lastSeen}</p></div><span className="text-xs font-semibold capitalize" style={{ color: member.status === "active" ? C.green : C.amber }}>{member.status}</span></div>)}</div></Card>;
+  if (view === "programs") return <Card><div className="flex items-center justify-between mb-4"><div><h2 className="font-bold" style={{ color: C.navy }}>Care programs</h2><p className="text-xs mt-1" style={{ color: C.muted }}>Track participation across your organisation.</p></div><Button size="sm" onClick={() => onNavigate("enterprise-dashboard", { view: "overview" })}>Back to overview</Button></div><div className="grid md:grid-cols-3 gap-4">{programs.map((program) => <div key={program.name} className="rounded-xl border p-4" style={{ borderColor: C.border }}><p className="text-sm font-semibold" style={{ color: C.navy }}>{program.name}</p><p className="text-2xl font-bold mt-3" style={{ color: program.color }}>{program.members}/{program.enrolled}</p><p className="text-xs mt-1" style={{ color: C.muted }}>members enrolled</p></div>)}</div></Card>;
+  if (view === "reports") return <Card><h2 className="font-bold" style={{ color: C.navy }}>Organisation reports</h2><p className="text-sm mt-1" style={{ color: C.muted }}>Operational reports are ready for review.</p><div className="grid md:grid-cols-3 gap-3 mt-5">{["Utilization report", "Care outcomes", "Healthcare spend"].map((report) => <button key={report} onClick={() => onToast(`${report} opened in demo mode.`)} className="rounded-xl border p-4 text-left hover:border-amber-300" style={{ borderColor: C.border }}><p className="text-sm font-semibold" style={{ color: C.navy }}>{report}</p><p className="text-xs mt-2" style={{ color: C.amber }}>Open report →</p></button>)}</div></Card>;
+  if (view === "billing") return <Card><h2 className="font-bold" style={{ color: C.navy }}>Billing and plans</h2><p className="text-sm mt-1" style={{ color: C.muted }}>Enterprise Pro · monthly billing</p><div className="mt-5 rounded-xl p-4" style={{ backgroundColor: C.warm }}><div className="flex justify-between"><span className="text-sm" style={{ color: C.muted }}>Current monthly spend</span><strong style={{ color: C.navy }}>₦640,000</strong></div><div className="flex justify-between mt-3"><span className="text-sm" style={{ color: C.muted }}>Next invoice</span><strong style={{ color: C.navy }}>01 Oct 2025</strong></div></div><Button className="mt-4" onClick={() => onToast("Invoice download started in demo mode.")}>Download invoice</Button></Card>;
+  return <Card><h2 className="font-bold" style={{ color: C.navy }}>Organisation activity</h2><div className="mt-4 flex flex-col gap-3">{activity.map((event) => <div key={`${event.text}-${event.time}`} className="flex items-start gap-3 border-b pb-3 last:border-0" style={{ borderColor: C.border }}><span className="w-2 h-2 rounded-full mt-1.5" style={{ backgroundColor: event.type === "success" ? C.green : event.type === "warn" ? C.amber : C.blue }} /><div><p className="text-sm" style={{ color: C.navy }}>{event.text}</p><p className="text-xs mt-1" style={{ color: C.muted }}>{event.time}</p></div></div>)}</div></Card>;
+}
+
 export default function EnterpriseDashboard() {
-  const { navigate } = useApp();
+  const { navigate, addToast, params, domain, inviteEnterpriseMember, createEnterpriseProgram } = useApp();
   const [activeTab, setActiveTab] = useState<"all" | "active" | "pending">("all");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const view = params.view || "overview";
+  const members = [...MEMBERS, ...domain.enterpriseMembers];
+  const programs = domain.enterprisePrograms.length ? domain.enterprisePrograms : PROGRAMS;
+  const activity = domain.enterpriseActivity.length ? domain.enterpriseActivity : ACTIVITY;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
-  const filteredMembers = activeTab === "all" ? MEMBERS
-    : activeTab === "active" ? MEMBERS.filter(m => m.status === "active")
-      : MEMBERS.filter(m => m.status === "pending");
+  const filteredMembers = activeTab === "all" ? members
+    : activeTab === "active" ? members.filter(m => m.status === "active")
+      : members.filter(m => m.status === "pending");
+  const totalMembers = ORG.memberCount + domain.enterpriseMembers.length;
+  const pendingMembers = ORG.pendingCount + domain.enterpriseMembers.filter((member) => member.status === "pending").length;
 
   return (
     <AppShell role="enterprise">
@@ -103,12 +120,14 @@ export default function EnterpriseDashboard() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
+              onClick={() => navigate("enterprise-dashboard", { view: "reports" })}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
               style={{ backgroundColor: "white", borderColor: "#e8ebf2", color: C.navy }}
             >
               <Ico type="plan" /> View Reports
             </button>
             <button
+              onClick={() => setInviteOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
               style={{ backgroundColor: C.amber }}
             >
@@ -132,9 +151,9 @@ export default function EnterpriseDashboard() {
           </div>
           <div className="flex gap-6 shrink-0 flex-wrap">
             {[
-              { label: "Members", value: ORG.memberCount, color: "white" },
+              { label: "Members", value: totalMembers, color: "white" },
               { label: "Active", value: ORG.activeCount, color: "#4ade80" },
-              { label: "Pending", value: ORG.pendingCount, color: C.amber },
+              { label: "Pending", value: pendingMembers, color: C.amber },
             ].map(s => (
               <div key={s.label} className="text-center">
                 <p className="text-2xl font-bold" style={{ fontFamily: "var(--font-display)", color: s.color }}>{s.value}</p>
@@ -144,8 +163,14 @@ export default function EnterpriseDashboard() {
           </div>
         </div>
 
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[{ id: "overview", label: "Overview" }, { id: "members", label: "Members" }, { id: "programs", label: "Care programs" }, { id: "reports", label: "Reports" }, { id: "billing", label: "Billing" }, { id: "activity", label: "Activity" }].map((item) => <button key={item.id} onClick={() => navigate("enterprise-dashboard", { view: item.id })} className="shrink-0 rounded-xl px-4 py-2 text-sm font-semibold border" style={{ backgroundColor: view === item.id ? C.navy : "white", color: view === item.id ? "white" : C.muted, borderColor: view === item.id ? C.navy : C.border }}>{item.label}</button>)}
+        </div>
+
+        {view !== "overview" && <CardView view={view} members={filteredMembers} programs={programs} activity={activity} onInvite={() => setInviteOpen(true)} onNavigate={navigate} onToast={(message) => addToast("info", message)} />}
+
         {/* ── Main 3-col layout ──────────────────────────────── */}
-        <div className="grid lg:grid-cols-3 gap-5">
+        {view === "overview" && <div className="grid lg:grid-cols-3 gap-5">
 
           {/* Col 1: Members */}
           <div className="flex flex-col gap-4">
@@ -187,15 +212,16 @@ export default function EnterpriseDashboard() {
                 ))}
               </div>
 
-              {ORG.pendingCount > 0 && (
+              {pendingMembers > 0 && (
                 <div className="mt-3 pt-3 rounded-xl p-3" style={{ borderTop: "1px solid #f0f2f7", backgroundColor: C.amberLight }}>
-                  <p className="text-xs font-semibold" style={{ color: C.amber }}>⚠ {ORG.pendingCount} pending invitations need attention</p>
+                  <p className="text-xs font-semibold" style={{ color: C.amber }}>⚠ {pendingMembers} pending invitations need attention</p>
                 </div>
               )}
             </div>
 
             {/* Invite CTA */}
             <button
+              onClick={() => setInviteOpen(true)}
               className="p-4 flex items-center gap-3 text-left w-full transition-all hover:opacity-90"
               style={{ ...CARD, background: `linear-gradient(135deg, ${C.amberLight} 0%, #fef9ef 100%)` }}
             >
@@ -244,7 +270,7 @@ export default function EnterpriseDashboard() {
                 <button className="text-xs font-semibold hover:opacity-70" style={{ color: C.amber }}>Manage →</button>
               </div>
               <div className="flex flex-col gap-3">
-                {PROGRAMS.map((p) => (
+                {programs.map((p) => (
                   <div key={p.name}>
                     <div className="flex justify-between mb-1">
                       <p className="text-xs font-semibold" style={{ color: C.navy }}>{p.name}</p>
@@ -256,7 +282,7 @@ export default function EnterpriseDashboard() {
                   </div>
                 ))}
               </div>
-              <button className="mt-4 w-full py-2.5 rounded-xl text-xs font-semibold" style={{ backgroundColor: C.amberLight, color: C.amber }}>
+              <button onClick={() => { createEnterpriseProgram(); addToast("success", "Care program created."); }} className="mt-4 w-full py-2.5 rounded-xl text-xs font-semibold" style={{ backgroundColor: C.amberLight, color: C.amber }}>
                 + Add Care Program
               </button>
             </div>
@@ -268,10 +294,10 @@ export default function EnterpriseDashboard() {
             {/* Org overview stats */}
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: "Total Members", value: ORG.memberCount, color: C.navy, bg: "#e7effc" },
+                { label: "Total Members", value: totalMembers, color: C.navy, bg: "#e7effc" },
                 { label: "Active Users", value: ORG.activeCount, color: "#16a34a", bg: "#dcfce7" },
                 { label: "Consultations", value: 38, color: C.amber, bg: C.amberLight },
-                { label: "Programs", value: PROGRAMS.length, color: "#8b5cf6", bg: "#f0e7ff" },
+                { label: "Programs", value: programs.length, color: "#8b5cf6", bg: "#f0e7ff" },
               ].map(s => (
                 <div key={s.label} className="p-4 rounded-2xl" style={{ backgroundColor: s.bg }}>
                   <p className="text-xs mb-1.5" style={{ color: "#8892a4" }}>{s.label}</p>
@@ -284,10 +310,10 @@ export default function EnterpriseDashboard() {
             <div className="p-5 flex-1" style={CARD}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-sm font-bold" style={{ color: C.navy }}>Recent Activity</p>
-                <button className="text-xs font-semibold hover:opacity-70" style={{ color: C.amber }}>View all →</button>
+                <button onClick={() => navigate("enterprise-dashboard", { view: "activity" })} className="text-xs font-semibold hover:opacity-70" style={{ color: C.amber }}>View all →</button>
               </div>
               <div className="flex flex-col gap-3">
-                {ACTIVITY.map((a, i) => (
+                {activity.map((a, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div
                       className="w-2 h-2 rounded-full mt-1.5 shrink-0"
@@ -304,6 +330,7 @@ export default function EnterpriseDashboard() {
 
             {/* Billing quick link */}
             <button
+              onClick={() => navigate("enterprise-dashboard", { view: "billing" })}
               className="p-4 flex items-center gap-3 text-left w-full transition-all hover:shadow-md"
               style={CARD}
             >
@@ -317,9 +344,16 @@ export default function EnterpriseDashboard() {
               <div style={{ color: "#a0a9bc" }}><Ico type="arrow" /></div>
             </button>
           </div>
-        </div>
+        </div>}
 
       </div>
+      <Modal open={inviteOpen} onClose={() => setInviteOpen(false)} title="Invite a member">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm" style={{ color: C.muted }}>Invite an employee to join Helix Technologies' Docura care programme.</p>
+          <Input label="Work email" type="email" placeholder="name@company.com" value={inviteEmail} onChange={setInviteEmail} />
+          <div className="flex gap-3 justify-end"><Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button><Button disabled={!inviteEmail.includes("@")} onClick={() => { inviteEnterpriseMember(inviteEmail); addToast("success", `Invitation sent to ${inviteEmail}.`); setInviteEmail(""); setInviteOpen(false); }}>Send invitation</Button></div>
+        </div>
+      </Modal>
     </AppShell>
   );
 }

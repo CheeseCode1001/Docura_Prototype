@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import logo from "@/assets/logo.png";
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
@@ -30,13 +30,15 @@ interface BtnProps {
   size?: "sm" | "md" | "lg";
   loading?: boolean;
   disabled?: boolean;
-  onClick?: () => void;
+  onClick?: (event?: React.MouseEvent) => void;
   type?: "button" | "submit";
   fullWidth?: boolean;
   className?: string;
+  style?: React.CSSProperties;
+  ariaLabel?: string;
 }
 
-export function Button({ children, variant = "primary", size = "md", loading, disabled, onClick, type = "button", fullWidth, className = "" }: BtnProps) {
+export function Button({ children, variant = "primary", size = "md", loading, disabled, onClick, type = "button", fullWidth, className = "", style: styleOverride, ariaLabel }: BtnProps) {
   const base = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 rounded-xl select-none";
   const sizes = { sm: "px-4 py-2 text-xs", md: "px-5 py-2.5 text-sm", lg: "px-6 py-3.5 text-sm" };
   const variants = {
@@ -52,12 +54,14 @@ export function Button({ children, variant = "primary", size = "md", loading, di
     color: variant === "ghost" ? C.navy : variant === "outline" ? C.navy : "white",
     borderColor: variant === "outline" ? C.border : undefined,
     width: fullWidth ? "100%" : undefined,
+    ...styleOverride,
   };
 
   return (
     <button
       type={type}
-      onClick={onClick}
+      aria-label={ariaLabel}
+      onClick={(event) => onClick?.(event)}
       disabled={disabled || loading}
       className={`${base} ${sizes[size]} ${variants[variant]} ${className}`}
       style={styles}
@@ -150,11 +154,11 @@ export function Avatar({ src, name, size = 40 }: { src?: string; name: string; s
 }
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
-export function Card({ children, className = "", onClick, padding = true }: { children: ReactNode; className?: string; onClick?: () => void; padding?: boolean }) {
+export function Card({ children, className = "", onClick, padding = true, style }: { children: ReactNode; className?: string; onClick?: () => void; padding?: boolean; style?: React.CSSProperties }) {
   return (
     <div
       className={`bg-white rounded-2xl border editorial-card ${onClick ? "cursor-pointer" : ""} ${padding ? "p-5" : ""} ${className}`}
-      style={{ borderColor: C.border }}
+      style={{ borderColor: C.border, ...style }}
       onClick={onClick}
     >
       {children}
@@ -437,14 +441,16 @@ export function StarRating({ rating, count }: { rating: number; count?: number }
 
 // ─── QR placeholder ──────────────────────────────────────────────────────────
 export function QRCode({ value }: { value: string }) {
-  const _void = value;
+  // `value` is what a real encoder would take; the placeholder renders a
+  // deterministic pattern seeded from its length so it stays stable per link.
+  const seed = value.length;
   return (
     <div className="w-32 h-32 rounded-lg overflow-hidden border-2 flex items-center justify-center" style={{ borderColor: C.border }}>
       <svg viewBox="0 0 100 100" width="128" height="128" style={{ display: "block" }}>
         {[0, 1, 2, 3, 4, 5, 6].map(row =>
           [0, 1, 2, 3, 4, 5, 6].map(col => {
             const inFinder = (row < 3 && col < 3) || (row < 3 && col > 3) || (row > 3 && col < 3);
-            const fill = inFinder || Math.random() > 0.5 ? C.navy : "white";
+            const fill = inFinder || (row * 7 + col * 3 + seed) % 3 !== 0 ? C.navy : "white";
             return <rect key={`${row}-${col}`} x={col * 13 + 3} y={row * 13 + 3} width={11} height={11} fill={fill} />;
           })
         )}
@@ -551,6 +557,227 @@ export function CrossBorderCard({ personalDoctor, prescribingDoctor, status }: {
       <div className="mt-3 pt-3 border-t" style={{ borderColor: C.border }}>
         <span className="text-xs" style={{ color: C.muted }}>Status: </span>
         <span className="text-xs font-semibold" style={{ color: status === "assigned" ? C.green : C.amber }}>{status}</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── PageHeader ──────────────────────────────────────────────────────────────
+// The standard top of every in-app page: eyebrow, title, supporting line and
+// optional actions. Wraps to a column on small screens.
+export function PageHeader({ eyebrow, title, subtitle, actions }: { eyebrow?: string; title: string; subtitle?: string; actions?: ReactNode }) {
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div className="min-w-0">
+        {eyebrow && <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: C.amber }}>{eyebrow}</p>}
+        <h1 className="text-2xl sm:text-3xl font-bold mt-1" style={{ fontFamily: "var(--font-display)", color: C.navy }}>{title}</h1>
+        {subtitle && <p className="text-sm mt-2 max-w-2xl" style={{ color: C.muted }}>{subtitle}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap gap-2 shrink-0">{actions}</div>}
+    </div>
+  );
+}
+
+// ─── ResponsiveTable ─────────────────────────────────────────────────────────
+// A table on wide screens, a stack of labelled cards below `lg`. Dashboards use
+// this instead of letting a data table scroll sideways on a phone.
+export interface ResponsiveColumn<T> {
+  key: string;
+  header: string;
+  render: (row: T) => ReactNode;
+  /** Hidden in the mobile card when the value is already the card title. */
+  primary?: boolean;
+}
+
+export function ResponsiveTable<T>({ columns, rows, rowKey, onRowClick, empty }: {
+  columns: ResponsiveColumn<T>[];
+  rows: T[];
+  rowKey: (row: T) => string;
+  onRowClick?: (row: T) => void;
+  empty?: ReactNode;
+}) {
+  if (!rows.length) {
+    return <div className="py-10 text-center text-sm" style={{ color: C.muted }}>{empty || "Nothing to show yet."}</div>;
+  }
+  return (
+    <>
+      <div className="hidden lg:block overflow-x-auto rounded-xl border" style={{ borderColor: C.border }}>
+        <table className="w-full text-sm" style={{ fontFamily: "var(--font-body)" }}>
+          <thead>
+            <tr style={{ backgroundColor: C.warm }}>
+              {columns.map((column) => (
+                <th key={column.key} className="text-left px-4 py-3 font-semibold text-xs uppercase tracking-wide" style={{ color: C.muted, borderBottom: `1px solid ${C.border}` }}>{column.header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, index) => (
+              <tr
+                key={rowKey(row)}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={`transition-colors ${onRowClick ? "cursor-pointer hover:bg-gray-50" : ""}`}
+                style={{ borderTop: index > 0 ? `1px solid ${C.border}` : undefined }}
+              >
+                {columns.map((column) => <td key={column.key} className="px-4 py-3 align-middle" style={{ color: C.navy }}>{column.render(row)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="lg:hidden flex flex-col gap-3">
+        {rows.map((row) => {
+          const primary = columns.find((column) => column.primary) || columns[0];
+          const rest = columns.filter((column) => column !== primary);
+          return (
+            <div
+              key={rowKey(row)}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              className={`rounded-xl border bg-white p-4 ${onRowClick ? "cursor-pointer" : ""}`}
+              style={{ borderColor: C.border }}
+            >
+              <div className="font-semibold text-sm mb-3" style={{ color: C.navy }}>{primary.render(row)}</div>
+              <dl className="flex flex-col gap-2">
+                {rest.map((column) => (
+                  <div key={column.key} className="flex items-start justify-between gap-3">
+                    <dt className="text-xs uppercase tracking-wide shrink-0" style={{ color: C.muted }}>{column.header}</dt>
+                    <dd className="text-sm text-right min-w-0" style={{ color: C.navy }}>{column.render(row)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+// ─── BarChart ────────────────────────────────────────────────────────────────
+// Deliberately dependency-free and fluid: the SVG scales with its container so
+// analytics stay readable from 320px upward.
+export function BarChart({ labels, values, color = C.navy, format }: { labels: string[]; values: number[]; color?: string; format?: (value: number) => string }) {
+  const max = Math.max(...values, 1);
+  return (
+    <div className="w-full">
+      <div className="flex items-end gap-2 h-40">
+        {values.map((value, index) => (
+          <div key={labels[index]} className="flex-1 flex flex-col items-center justify-end gap-2 min-w-0">
+            <span className="text-[10px] font-semibold" style={{ color: C.muted }}>{format ? format(value) : value}</span>
+            <div className="w-full rounded-t-lg transition-all duration-500" style={{ height: `${Math.max(6, (value / max) * 100)}%`, backgroundColor: color, opacity: index === values.length - 1 ? 0.55 : 1 }} />
+            <span className="text-[10px] truncate w-full text-center" style={{ color: C.muted }}>{labels[index]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sparkline ───────────────────────────────────────────────────────────────
+export function Sparkline({ values, color = C.amber }: { values: number[]; color?: string }) {
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const span = max - min || 1;
+  const points = values.map((value, index) => `${(index / (values.length - 1)) * 100},${28 - ((value - min) / span) * 24}`).join(" ");
+  return (
+    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-8" aria-hidden="true">
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  );
+}
+
+// ─── PermissionRow ───────────────────────────────────────────────────────────
+// Used wherever delegated access is granted or removed, so the consequence of a
+// toggle is always spelled out next to the control.
+export function PermissionRow({ label, description, granted, sensitive, disabled, onChange }: {
+  label: string; description: string; granted: boolean; sensitive?: boolean; disabled?: boolean; onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 py-4 border-b last:border-0" style={{ borderColor: C.border }}>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="text-sm font-semibold" style={{ color: C.navy }}>{label}</p>
+          {sensitive && <Badge variant="yellow">Sensitive</Badge>}
+        </div>
+        <p className="text-xs mt-1" style={{ color: C.muted }}>{description}</p>
+      </div>
+      <div className="shrink-0 pt-1">
+        {disabled
+          ? <Badge variant="gray">Patient only</Badge>
+          : <Toggle checked={granted} onChange={onChange} />}
+      </div>
+    </div>
+  );
+}
+
+// ─── StatusPill ──────────────────────────────────────────────────────────────
+const STATUS_TONE: Record<string, BadgeVariant> = {
+  active: "green", paid: "green", accepted: "green", completed: "green", approved: "green", resolved: "green", published: "green",
+  pending: "amber", upcoming: "amber", processing: "amber", "in-progress": "amber", requested: "amber", "under-review": "amber", "in-review": "amber", waiting: "amber",
+  failed: "red", disputed: "red", missed: "red", rejected: "red", revoked: "red", restricted: "red", declined: "red",
+  expired: "gray", used: "gray", inactive: "gray", open: "blue", refunded: "blue", investigating: "yellow", "more-info-required": "yellow", onboarding: "yellow",
+};
+
+export function StatusPill({ status }: { status: string }) {
+  return <Badge variant={STATUS_TONE[status] || "gray"}>{status.replace(/-/g, " ")}</Badge>;
+}
+
+// ─── FilterBar ───────────────────────────────────────────────────────────────
+export function FilterBar({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: { id: string; label: string }[] }) {
+  return (
+    <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+      {options.map((option) => (
+        <button
+          key={option.id}
+          onClick={() => onChange(option.id)}
+          className="shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold border transition-colors"
+          style={{
+            backgroundColor: value === option.id ? C.navy : "white",
+            color: value === option.id ? "white" : C.muted,
+            borderColor: value === option.id ? C.navy : C.border,
+            fontFamily: "var(--font-body)",
+          }}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── SearchField ─────────────────────────────────────────────────────────────
+export function SearchField({ value, onChange, placeholder, label }: { value: string; onChange: (value: string) => void; placeholder: string; label: string }) {
+  return (
+    <div className="relative w-full">
+      <svg className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="2" strokeLinecap="round">
+        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl border pl-11 pr-4 py-3 text-sm outline-none"
+        style={{ borderColor: C.border, fontFamily: "var(--font-body)", color: C.navy, backgroundColor: "white" }}
+        onFocus={(event) => { event.currentTarget.style.borderColor = C.amber; }}
+        onBlur={(event) => { event.currentTarget.style.borderColor = C.border; }}
+      />
+    </div>
+  );
+}
+
+// ─── AiDisclosure ────────────────────────────────────────────────────────────
+// Shown anywhere Docura's intelligence layer contributes to what is on screen.
+// AI assists; the responsible clinician decides.
+export function AiDisclosure({ detail }: { detail?: string }) {
+  return (
+    <div className="rounded-xl p-4 flex gap-3" style={{ backgroundColor: C.amberLight }}>
+      <span className="text-base leading-none pt-0.5">✨</span>
+      <div>
+        <p className="text-sm font-semibold" style={{ color: C.navy, fontFamily: "var(--font-body)" }}>AI-assisted, clinician-led</p>
+        <p className="text-xs mt-1 leading-relaxed" style={{ color: C.label }}>
+          {detail || "Docura's intelligence layer organises and summarises information. It does not diagnose, prescribe, or make clinical decisions — your doctor does."}
+        </p>
       </div>
     </div>
   );

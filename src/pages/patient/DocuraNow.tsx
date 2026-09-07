@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Button, Card, Avatar, Badge, VerifiedBadge, StarRating, AvailabilityDot, Chip, C, Spinner, AlertBanner } from "@/components/ui";
+import { Button, Card, Avatar, VerifiedBadge, StarRating, AvailabilityDot, Chip, C, AlertBanner } from "@/components/ui";
 import { DOCTORS } from "@/data/mock";
 
 type Step = "symptoms" | "doctors" | "payment" | "processing" | "chat" | "complete";
@@ -232,12 +232,12 @@ function CompleteStep({ doctorId, onContinueCare, onDone }: { doctorId: string; 
 }
 
 export default function DocuraNow() {
-  const { navigate, createConsultation } = useApp();
+  const { navigate, createConsultation, role } = useApp();
   const [step, setStep] = useState<Step>("symptoms");
   const [doctorId, setDoctorId] = useState("d1");
 
   return (
-    <AppShell role="patient" topBarTitle="Docura Now" showTopBarBack>
+    <AppShell role={role} topBarTitle="Docura Now" showTopBarBack>
       {step === "symptoms" && <SymptomsStep onNext={() => setStep("doctors")} />}
       {step === "doctors" && <DoctorsStep onSelect={(id) => { setDoctorId(id); setStep("payment"); }} />}
       {step === "payment" && <PaymentStep doctorId={doctorId} onPay={() => setStep("chat")} />}

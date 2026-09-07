@@ -13,7 +13,7 @@ const COMPLETED_MOCK = [
 const DURATIONS = ["3 days", "1 week", "2 weeks", "1 month", "Custom"];
 
 export default function DoctorFollowUps() {
-  const { addToast } = useApp();
+  const { addToast, navigate, domain, scheduleFollowUp, completeFollowUp } = useApp();
   const [activeTab, setActiveTab] = useState("Upcoming");
   const [showSchedule, setShowSchedule] = useState(false);
   const [schedPatient, setSchedPatient] = useState("");
@@ -21,13 +21,26 @@ export default function DoctorFollowUps() {
   const [schedDate, setSchedDate] = useState("");
   const [schedDuration, setSchedDuration] = useState("1 week");
 
-  const upcoming = DOCTOR_FOLLOW_UPS.filter((f) => f.status === "upcoming");
-  const missed = DOCTOR_FOLLOW_UPS.filter((f) => f.status === "missed");
+  // Follow-ups created anywhere in the app (consultation room, care plan, this
+  // page) land in shared state, so every view agrees on the queue.
+  const live = domain.followUps.map((item) => ({
+    id: item.id,
+    patient: DOCTOR_PATIENTS.find((patient) => patient.id === "p1")?.name || "Adaeze Okafor",
+    photo: item.doctorPhoto,
+    reason: item.reason,
+    date: item.scheduledDate,
+    status: item.status,
+    urgent: item.status === "missed",
+  }));
+  const all = [...live, ...DOCTOR_FOLLOW_UPS.filter((seed) => !live.some((item) => item.reason === seed.reason))];
+  const upcoming = all.filter((f) => f.status === "upcoming");
+  const missed = all.filter((f) => f.status === "missed");
+  const completed = [...all.filter((f) => f.status === "completed"), ...COMPLETED_MOCK];
 
   function getList() {
     if (activeTab === "Upcoming") return upcoming;
     if (activeTab === "Missed") return missed;
-    return COMPLETED_MOCK;
+    return completed;
   }
 
   function schedule() {
@@ -35,7 +48,14 @@ export default function DoctorFollowUps() {
       addToast("error", "Please fill in all required fields");
       return;
     }
-    addToast("success", "Follow-up scheduled");
+    scheduleFollowUp({
+      doctorId: "d1",
+      doctorName: "Dr. Amara Osei",
+      doctorPhoto: DOCTOR_PATIENTS.find((patient) => patient.name === schedPatient)?.photo || "",
+      reason: schedReason || `Review in ${schedDuration}`,
+      scheduledDate: schedDate,
+    });
+    addToast("success", "Follow-up scheduled and the patient notified");
     setShowSchedule(false);
     setSchedPatient("");
     setSchedReason("");
@@ -96,9 +116,14 @@ export default function DoctorFollowUps() {
                     <p className="text-xs mt-0.5" style={{ color: C.muted }}>{fu.date}</p>
                   </div>
                   {fu.status === "upcoming" && (
-                    <Button size="sm" onClick={() => addToast("info", "Starting consultation with " + fu.patient)}>
-                      Start consultation
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => navigate("consultation-room", { doctorId: "d1" })}>
+                        Start consultation
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { completeFollowUp(fu.id); addToast("success", `Follow-up for ${fu.patient} marked complete.`); }}>
+                        Complete
+                      </Button>
+                    </div>
                   )}
                   {fu.status === "missed" && (
                     <Button size="sm" variant="outline" onClick={() => addToast("info", "Rescheduling follow-up for " + fu.patient)}>

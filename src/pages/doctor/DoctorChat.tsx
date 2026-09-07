@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { C, Avatar, Button } from "@/components/ui";
+import { C, Avatar } from "@/components/ui";
 import { DOCTOR_PATIENTS } from "@/data/mock";
 
 const INIT_MESSAGES = [

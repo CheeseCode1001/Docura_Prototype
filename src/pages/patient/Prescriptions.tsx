@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Card, Badge, QRCode, Button, Tabs, C, SectionHeader, DocuraLogo, Modal } from "@/components/ui";
-import { PRESCRIPTIONS, DOCTORS, PATIENT } from "@/data/mock";
+import { Card, Badge, QRCode, Button, Tabs, C, DocuraLogo, Modal } from "@/components/ui";
+import { PATIENT } from "@/data/mock";
+import { useApp } from "@/context/AppContext";
+import type { Prescription } from "@/data/types";
 
-function RxCard({ rx, onClick }: { rx: typeof PRESCRIPTIONS[0]; onClick: () => void }) {
+type Rx = Prescription;
+
+function RxCard({ rx, onClick }: { rx: Rx; onClick: () => void }) {
   const statusMap: Record<string, "green" | "amber" | "gray" | "red"> = { active: "green", used: "amber", expired: "gray", void: "red" };
   return (
     <Card onClick={onClick}>
@@ -26,7 +30,7 @@ function RxCard({ rx, onClick }: { rx: typeof PRESCRIPTIONS[0]; onClick: () => v
   );
 }
 
-function RxDetail({ rx, onClose }: { rx: typeof PRESCRIPTIONS[0]; onClose: () => void }) {
+function RxDetail({ rx, onClose }: { rx: Rx; onClose: () => void }) {
   const [enlarged, setEnlarged] = useState(false);
   const statusMap: Record<string, "green" | "amber" | "gray" | "red"> = { active: "green", used: "amber", expired: "gray", void: "red" };
 
@@ -92,11 +96,12 @@ function RxDetail({ rx, onClose }: { rx: typeof PRESCRIPTIONS[0]; onClose: () =>
 }
 
 export default function Prescriptions() {
+  const { domain } = useApp();
   const [tab, setTab] = useState("All");
-  const [selected, setSelected] = useState<typeof PRESCRIPTIONS[0] | null>(null);
+  const [selected, setSelected] = useState<Rx | null>(null);
   const tabs = ["All", "Active", "Used", "Expired"];
 
-  const filtered = PRESCRIPTIONS.filter((rx) => tab === "All" || rx.status === tab.toLowerCase());
+  const filtered = domain.prescriptions.filter((rx) => tab === "All" || rx.status === tab.toLowerCase());
 
   return (
     <AppShell role="patient" topBarTitle="Prescriptions">

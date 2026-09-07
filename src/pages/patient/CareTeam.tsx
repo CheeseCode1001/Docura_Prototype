@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
 import { Avatar, Badge, Button, C, SectionHeader, AvailabilityDot } from "@/components/ui";
-import { CARE_TEAM, PATIENT } from "@/data/mock";
+import { CARE_TEAM } from "@/data/mock";
 import { useApp } from "@/context/AppContext";
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -158,7 +158,6 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 export default function CareTeam() {
-  const { addToast } = useApp();
   const primaryDoc = CARE_TEAM.find((d) => d.role === "Personal Doctor")!;
   const totalConsultations = CARE_TEAM.reduce((s, d) => s + d.consultations, 0);
   const months = monthsAgo(primaryDoc.since);

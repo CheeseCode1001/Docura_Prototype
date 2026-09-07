@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/context/AppContext";
 import { DocuraLogo, C, Spinner } from "@/components/ui";
+import type { AdminRole } from "@/data/types";
 
 type AuthView =
   | "login" | "signup" | "forgot" | "otp" | "reset" | "success"
-  | "doctor-login" | "doctor-signup"
+  | "doctor-login" | "doctor-signup" | "admin-login"
   | "account-type"
   | "onboarding-welcome" | "onboarding-profile" | "onboarding-health"
   | "onboarding-care" | "onboarding-location" | "onboarding-complete";
@@ -326,9 +327,10 @@ function PhotoPanel({ view, slide, onSlide }: { view: AuthView; slide: number; o
 // ── Main export ─────────────────────────────────────────────
 
 export default function AuthLayout({ initialView = "login" }: { initialView?: AuthView }) {
-  const { navigate, setRole, params, markOnboardingComplete } = useApp();
+  const { navigate, setRole, setAdminRole, params, markOnboardingComplete } = useApp();
   const [view, setView] = useState<AuthView>(initialView);
-  const [accountRole] = useState<"patient" | "doctor" | "proxy">(params.accountRole === "proxy" ? "proxy" : initialView.includes("doctor") ? "doctor" : "patient");
+  const [accountRole] = useState<"patient" | "doctor" | "proxy" | "enterprise">(params.accountRole === "proxy" ? "proxy" : params.accountRole === "enterprise" ? "enterprise" : initialView.includes("doctor") ? "doctor" : "patient");
+  const [staffRole, setStaffRole] = useState<AdminRole>("super-admin");
   const [visible, setVisible] = useState(true);
   const [slide, setSlide] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -426,6 +428,50 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
                 </button>
               </p>
             )}
+          </>
+        );
+
+      case "admin-login":
+        return (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: C.amber }}>Internal access</p>
+            <h2 className="text-2xl font-bold mb-1 leading-tight" style={{ fontFamily: "var(--font-display)", color: C.navy }}>
+              Docura operations
+            </h2>
+            <p className="text-sm mb-6" style={{ color: "#8892a4" }}>
+              Sign in with your Docura staff account. Your internal role decides what you can open.
+            </p>
+            <div className="flex flex-col gap-3.5">
+              <Field label="Work email" type="email" placeholder="you@docura.health" value={phone} onChange={setPhone} />
+              <PwField label="Password" value={password} onChange={setPassword} />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium" style={{ color: C.label }}>Internal role</label>
+                <select
+                  aria-label="Internal role"
+                  value={staffRole}
+                  onChange={(event) => setStaffRole(event.target.value as AdminRole)}
+                  className="w-full rounded-lg border px-4 py-3 text-sm outline-none"
+                  style={{ borderColor: C.border, color: C.navy, backgroundColor: "white" }}
+                >
+                  <option value="super-admin">Super Admin</option>
+                  <option value="operations">Operations</option>
+                  <option value="finance">Finance</option>
+                  <option value="support">Support</option>
+                  <option value="medical-board">Medical Board</option>
+                </select>
+              </div>
+              <Btn loading={loading} onClick={() => fakeLoad(() => {
+                setRole("admin");
+                setAdminRole(staffRole);
+                markOnboardingComplete();
+                navigate("admin-dashboard");
+              })}>
+                Sign in to operations
+              </Btn>
+            </div>
+            <p className="text-center text-xs mt-4">
+              <button onClick={() => goTo("login")} className="hover:underline" style={{ color: "#a0a9bc" }}>Patient login instead</button>
+            </p>
           </>
         );
 
@@ -590,7 +636,7 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
               {[
                 { id: "personal", title: "Personal Care", desc: "For your own healthcare journey.", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg> },
                 { id: "proxy", title: "Care for someone else", desc: "Coordinate care for a parent, child, or loved one.", icon: <span aria-hidden="true">♥</span> },
-                { id: "enterprise", title: "Enterprise / Organisation", desc: "For organisations managing healthcare access.", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></svg> },
+                { id: "enterprise", title: "Connected Care Partner", desc: "For organisations and hospitals coordinating continuity of care.", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="2" strokeLinecap="round"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></svg> },
               ].map((opt) => {
                 const sel = selectedAccType === opt.id;
                 return (

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Badge, Button, C, Modal, Card, Table } from "@/components/ui";
+import { Badge, Button, C, Modal, Table } from "@/components/ui";
 import { ADMIN_DISPUTES } from "@/data/mock";
 
 const statusBadge: Record<string, "red" | "amber" | "green"> = { open: "red", investigating: "amber", resolved: "green" };

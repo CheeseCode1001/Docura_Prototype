@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Card, Button, Avatar, Badge, VerifiedBadge, AvailabilityDot, StarRating, Chip, C } from "@/components/ui";
-import { DOCTORS } from "@/data/mock";
+import { Card, Button, Avatar, Badge, VerifiedBadge, AvailabilityDot, StarRating, Chip, C, AlertBanner } from "@/components/ui";
+import { api } from "@/services/api";
 
 export default function FindDoctor() {
-  const { navigate } = useApp();
+  const { navigate, role } = useApp();
   const [search, setSearch] = useState("");
   const [specialty, setSpecialty] = useState("All");
   const [availableNow, setAvailableNow] = useState(false);
+  const [sort, setSort] = useState<"match" | "rating" | "price">("match");
+  const DOCTORS = api.doctors();
 
   const specialties = ["All", "General Practice", "Women's Health", "Mental Wellbeing", "Dermatology", "Cardiology"];
 
@@ -17,10 +19,14 @@ export default function FindDoctor() {
     const matchSpecialty = specialty === "All" || d.specialty === specialty;
     const matchAvail = !availableNow || d.availability === "online";
     return matchSearch && matchSpecialty && matchAvail;
+  }).sort((a, b) => {
+    if (sort === "rating") return b.rating - a.rating;
+    if (sort === "price") return a.consultationPrice - b.consultationPrice;
+    return (b.discovery?.score || 0) - (a.discovery?.score || 0);
   });
 
   return (
-    <AppShell role="patient" topBarTitle="Find a doctor">
+    <AppShell role={role} topBarTitle="Find a doctor">
       <div className="w-full px-4 md:px-6 py-6 flex flex-col gap-6">
         {/* Search */}
         <div className="relative">
@@ -45,14 +51,23 @@ export default function FindDoctor() {
               <Chip key={s} label={s} selected={specialty === s} onClick={() => setSpecialty(s)} />
             ))}
           </div>
-          <div className="flex gap-3 mt-3">
+          <div className="flex flex-wrap gap-2 mt-3">
             <Chip label="🟢 Online now" selected={availableNow} onClick={() => setAvailableNow(!availableNow)} />
+            <Chip label="Best match" selected={sort === "match"} onClick={() => setSort("match")} />
+            <Chip label="Highest rated" selected={sort === "rating"} onClick={() => setSort("rating")} />
+            <Chip label="Lowest price" selected={sort === "price"} onClick={() => setSort("price")} />
           </div>
         </div>
 
+        <AlertBanner
+          type="info"
+          title="Why these doctors?"
+          body="Docura ranks on responsiveness, continuity, patient ratings and availability — and rotates newly verified doctors into view so ranking does not simply reward whoever arrived first. Each card shows its reasons."
+        />
+
         {/* Results */}
         <div className="flex flex-col gap-4">
-          <p className="text-sm" style={{ color: C.muted }}>{filtered.length} doctors found</p>
+          <p className="text-sm" style={{ color: C.muted }}>{filtered.length} doctors found · sorted by {sort === "match" ? "best match" : sort === "rating" ? "rating" : "price"}</p>
           {filtered.map((doc) => (
             <Card key={doc.id} onClick={() => navigate("doctor-profile", { doctorId: doc.id })}>
               <div className="flex gap-4 items-start">
@@ -69,10 +84,27 @@ export default function FindDoctor() {
                     <span>💼 {doc.experience} yrs exp</span>
                     <span>🗣 {doc.languages.join(", ")}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <StarRating rating={doc.rating} count={doc.reviews} />
                     <AvailabilityDot status={doc.availability} />
+                    {doc.discovery?.rotationBoost && <Badge variant="blue">Newly verified</Badge>}
                   </div>
+                  {doc.discovery && (
+                    <div className="mt-3 rounded-xl p-3" style={{ backgroundColor: C.warm }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs font-semibold" style={{ color: C.navy }}>Match score {doc.discovery.score}</p>
+                        <span className="text-[11px]" style={{ color: C.muted }}>Why this doctor</span>
+                      </div>
+                      <ul className="flex flex-col gap-1">
+                        {doc.discovery.reasons.slice(0, 2).map((reason) => (
+                          <li key={reason} className="text-xs flex gap-2" style={{ color: C.muted }}>
+                            <span className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: C.amber }} />
+                            {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t flex items-center justify-between" style={{ borderColor: C.border }}>

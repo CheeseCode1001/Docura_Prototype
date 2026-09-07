@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { C, Button, Card, Badge, Modal, Divider, QRCode } from "@/components/ui";
+import { C, Button, Card, Modal, Divider, QRCode } from "@/components/ui";
 import { useApp } from "@/context/AppContext";
 import { PATIENT, MEDICATIONS, CARE_TEAM } from "@/data/mock";
 

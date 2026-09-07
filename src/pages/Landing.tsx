@@ -1,38 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/context/AppContext";
 import { C } from "@/components/ui";
+import { SiteFooter } from "@/pages/PublicPage";
 import logo from "@/assets/logo.png";
 
 const LANDING_NAV = [
   { label: "How it works", page: "public-how-it-works" },
   { label: "Docura Care", page: "public-care" },
   { label: "Docura Now", page: "public-now" },
+  { label: "Global care", page: "public-crossborder" },
+  { label: "Docura TV", page: "tv-home" },
   { label: "For Doctors", page: "public-doctors" },
 ];
 
-const FOOTER_LINKS: Record<string, { label: string; page: string }[]> = {
-  Patients: [
-    { label: "Docura Now", page: "public-now" },
-    { label: "Docura Care", page: "public-care" },
-    { label: "Find a Doctor", page: "find-doctor" },
-    { label: "Health Passport", page: "health-passport" },
-  ],
-  Doctors: [
-    { label: "Join Docura", page: "doctor-signup" },
-    { label: "How it works", page: "public-how-it-works" },
-    { label: "Doctor Login", page: "doctor-login" },
-  ],
-  Company: [
-    { label: "About", page: "public-about" },
-    { label: "Contact", page: "public-contact" },
-    { label: "Help", page: "public-help" },
-  ],
-  Legal: [
-    { label: "Privacy", page: "public-privacy" },
-    { label: "Terms", page: "public-terms" },
-    { label: "Security", page: "public-security" },
-  ],
-};
+const LANDING_TV = [
+  { id: "tv1", title: "What your HbA1c number actually means", creator: "Dr. Amara Osei", thumb: "https://images.unsplash.com/photo-1505576399279-565b52d4ac71?w=600&h=800&fit=crop" },
+  { id: "tv3", title: "Perimenopause: the signs people miss", creator: "Dr. Sarah Adeyemi", thumb: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=600&h=800&fit=crop" },
+  { id: "tv4", title: "Hyperpigmentation: what actually helps", creator: "Dr. Fatima Bello", thumb: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&h=800&fit=crop" },
+  { id: "tv6", title: "Fever in children: when to go to hospital", creator: "Dr. Amara Osei", thumb: "https://images.unsplash.com/photo-1476703993599-0035a21b17a9?w=600&h=800&fit=crop" },
+];
+
+const LANDING_FAQS = [
+  { q: "What is the difference between Docura Now and Docura Care?", a: "Docura Now is a one-off consultation with an available verified doctor. Docura Care is an ongoing relationship with a personal doctor who knows your history, including messaging, care plans and follow-ups." },
+  { q: "Are Docura doctors verified?", a: "Yes. Identity and licence are confirmed with the doctor's regulator — MDCN in Nigeria, GMC in the United Kingdom — before they can see any patient on Docura." },
+  { q: "What happens to my care when I travel?", a: "Your personal doctor continues to lead your care. Where they are not licensed to prescribe, a locally licensed prescribing doctor joins your care team for that purpose." },
+  { q: "Who can see my health record?", a: "You own it. Doctors see what is relevant to the care they provide, a proxy sees only what you delegate, support staff never see clinical records, and every share can be revoked." },
+  { q: "Does Docura use AI to make decisions?", a: "No. AI summarises, organises and translates. Diagnosis, prescribing and every clinical decision remain with a licensed doctor." },
+  { q: "How much does it cost?", a: "Doctors set their own prices. Consultations typically run ₦4,500–₦8,000 or £20–£30, and monthly care relationships ₦12,000–₦20,000 or £45–£60. Prices are always shown before you pay." },
+];
 
 function LandingLogo({ size = 32 }: { size?: number }) {
   return (
@@ -85,7 +80,14 @@ function fadeStyle(visible: boolean): React.CSSProperties {
 }
 
 export default function Landing() {
-  const { navigate } = useApp();
+  const { navigate, role } = useApp();
+
+  /**
+   * Marketing CTAs point at real product flows. A signed-in patient goes
+   * straight there; a visitor is taken to account creation first, rather than
+   * hitting a "sign in to continue" wall.
+   */
+  const startFlow = (page: string) => navigate(role === "patient" || role === "proxy" ? page : "role-select");
   const [heroIdx, setHeroIdx] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -100,6 +102,13 @@ export default function Landing() {
   const trust = useFadeIn();
   const doctorCta = useFadeIn();
   const proxy = useFadeIn();
+  const careTeam = useFadeIn();
+  const proxySection = useFadeIn();
+  const intelligence = useFadeIn();
+  const hospitals = useFadeIn();
+  const tv = useFadeIn();
+  const faq = useFadeIn();
+  const [openFaq, setOpenFaq] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setInterval(() => setHeroIdx((i) => (i + 1) % HERO_SLIDES.length), 5200);
@@ -240,14 +249,14 @@ export default function Landing() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 mb-7">
                   <button
-                    onClick={() => navigate("docura-now-flow")}
+                    onClick={() => startFlow("docura-now-flow")}
                     className="px-7 py-4 text-sm font-semibold rounded-full transition-opacity hover:opacity-88"
                     style={{ backgroundColor: C.amber, color: "white" }}
                   >
                     Talk to a Doctor
                   </button>
                   <button
-                    onClick={() => navigate("find-doctor")}
+                    onClick={() => startFlow("find-doctor")}
                     className="px-7 py-4 text-sm font-semibold rounded-xl border transition-colors hover:bg-white/10"
                     style={{ borderColor: "rgba(255,255,255,0.35)", color: "white" }}
                   >
@@ -333,11 +342,33 @@ export default function Landing() {
               Get care for urgent symptoms, a diagnosis, and a prescription — all in one secure conversation.
             </p>
             <button
-              onClick={() => navigate("docura-now-flow")}
+              onClick={() => startFlow("docura-now-flow")}
               className="self-start px-6 py-3 text-sm font-semibold rounded-full mt-2 transition-opacity hover:opacity-88"
               style={{ backgroundColor: C.navy, color: "white" }}
             >
               Talk to a Doctor
+            </button>
+
+            <button
+              onClick={() => navigate("role-select")}
+              className="rounded-3xl p-7 text-left border transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: "#EAF4F1", borderColor: C.border }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Docura Proxy</p>
+              <h3 className="text-xl font-bold mb-3" style={{ color: C.navy, fontFamily: "var(--font-display)" }}>Care for someone else.</h3>
+              <p className="text-sm leading-relaxed" style={{ color: "#5c6580" }}>Coordinate appointments, medications, and updates for a loved one while they remain the owner of their record.</p>
+              <span className="inline-block mt-5 text-sm font-semibold" style={{ color: C.navy }}>Explore Proxy care →</span>
+            </button>
+
+            <button
+              onClick={() => navigate("role-select")}
+              className="rounded-3xl p-7 text-left border transition-transform hover:-translate-y-1"
+              style={{ backgroundColor: "white", borderColor: C.border }}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Connected Care Partners</p>
+              <h3 className="text-xl font-bold mb-3" style={{ color: C.navy, fontFamily: "var(--font-display)" }}>Continue care beyond discharge.</h3>
+              <p className="text-sm leading-relaxed" style={{ color: "#5c6580" }}>Help your organisation or hospital connect people to trusted follow-up care, referrals, and continuity.</p>
+              <span className="inline-block mt-5 text-sm font-semibold" style={{ color: C.navy }}>Partner with Docura →</span>
             </button>
           </div>
 
@@ -370,7 +401,7 @@ export default function Landing() {
               Your personal doctor gets to know your health over time, wherever life takes you.
             </p>
             <button
-              onClick={() => navigate("find-doctor")}
+              onClick={() => startFlow("find-doctor")}
               className="self-start px-6 py-3 text-sm font-semibold rounded-full mt-2 border transition-colors hover:bg-white/10"
               style={{ borderColor: C.navy, color: C.navy }}
             >
@@ -586,7 +617,7 @@ export default function Landing() {
             </div>
 
             <button
-              onClick={() => navigate("find-doctor")}
+              onClick={() => startFlow("find-doctor")}
               className="self-start px-7 py-3.5 text-sm font-semibold rounded-full border transition-colors hover:bg-gray-100"
               style={{ borderColor: C.navy, color: C.navy }}
             >
@@ -629,7 +660,7 @@ export default function Landing() {
               Talk to a verified doctor when you need care today.
             </p>
             <button
-              onClick={() => navigate("docura-now-flow")}
+              onClick={() => startFlow("docura-now-flow")}
               className="px-7 py-3.5 text-sm font-semibold rounded-full transition-opacity hover:opacity-88"
               style={{ backgroundColor: C.amber, color: "white" }}
             >
@@ -786,7 +817,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Health Passport ────────────────────────────────── */}
+      {/* ── Medical Documents ────────────────────────────────── */}
       <section
         ref={passport.ref as React.RefObject<HTMLElement>}
         style={{ backgroundColor: "#FAFAF8", ...fadeStyle(passport.visible) }}
@@ -798,7 +829,7 @@ export default function Landing() {
               className="text-xs font-semibold uppercase tracking-widest mb-5"
               style={{ color: C.amber }}
             >
-              Health Passport
+              Medical Documents
             </p>
             <h2
               className="mb-6"
@@ -842,7 +873,7 @@ export default function Landing() {
                       className="font-bold text-base"
                       style={{ fontFamily: "var(--font-display)" }}
                     >
-                      Health Passport
+                      Medical Documents
                     </p>
                   </div>
                   <div
@@ -1139,7 +1170,7 @@ export default function Landing() {
 
           <div className="grid md:grid-cols-4 gap-4 auto-rows-[minmax(180px,auto)]">
             <button
-              onClick={() => navigate("patient-care")}
+              onClick={() => startFlow("patient-care")}
               className="md:col-span-2 md:row-span-2 rounded-3xl p-8 md:p-10 text-left relative overflow-hidden transition-transform hover:-translate-y-1"
               style={{ backgroundColor: C.navy, color: "white" }}
             >
@@ -1162,7 +1193,7 @@ export default function Landing() {
             </button>
 
             <button
-              onClick={() => navigate("docura-now-flow")}
+              onClick={() => startFlow("docura-now-flow")}
               className="md:col-span-2 rounded-3xl p-7 text-left transition-transform hover:-translate-y-1"
               style={{ backgroundColor: C.amber, color: C.navy }}
             >
@@ -1177,17 +1208,17 @@ export default function Landing() {
             </button>
 
             <button
-              onClick={() => navigate("health-passport")}
+              onClick={() => navigate("public-health-record")}
               className="rounded-3xl p-7 text-left border transition-transform hover:-translate-y-1"
               style={{ backgroundColor: "white", borderColor: C.border }}
             >
-              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Health Passport</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Health record</p>
               <h3 className="text-xl font-bold mb-3" style={{ color: C.navy, fontFamily: "var(--font-display)" }}>Your health, always with you.</h3>
-              <p className="text-sm leading-relaxed" style={{ color: "#7a8099" }}>Share the essentials with the doctors caring for you.</p>
+              <p className="text-sm leading-relaxed" style={{ color: "#7a8099" }}>One organised history, shared only with the people you choose.</p>
             </button>
 
             <button
-              onClick={() => navigate("public-care")}
+              onClick={() => navigate("public-crossborder")}
               className="rounded-3xl p-7 text-left border transition-transform hover:-translate-y-1"
               style={{ backgroundColor: "#EAF4F1", borderColor: "#D7E9E4" }}
             >
@@ -1196,6 +1227,290 @@ export default function Landing() {
               <p className="text-sm leading-relaxed" style={{ color: "#55736D" }}>Your care can continue across borders.</p>
             </button>
           </div>
+        </div>
+      </section>
+
+      {/* ── Care Team & Health Passport ────────────────────── */}
+      <section
+        ref={careTeam.ref as React.RefObject<HTMLElement>}
+        style={{ backgroundColor: "white", ...fadeStyle(careTeam.visible) }}
+        className="py-20 md:py-28 px-5 sm:px-6"
+      >
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Your care team</p>
+            <h2 className="mb-5" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 3.6vw, 3rem)", color: C.navy, fontWeight: 700, lineHeight: 1.1 }}>
+              Everyone looking after you, in one place.
+            </h2>
+            <p className="text-base leading-relaxed mb-8" style={{ color: "#5c6580", maxWidth: 520 }}>
+              A personal doctor who knows you. A prescribing doctor where you are. Specialists, coordinators and partners
+              brought in when they are needed — each seeing only what your care requires.
+            </p>
+            <div className="flex flex-col gap-3">
+              {[
+                { role: "Personal Doctor", detail: "Leads your care and knows your history." },
+                { role: "Prescribing Doctor", detail: "Licensed where you are, responsible for prescriptions there." },
+                { role: "Specialists & partners", detail: "Joined by referral, with the context they need and nothing more." },
+                { role: "Coordinators", detail: "A family member you delegate to, with scoped and revocable access." },
+              ].map((item) => (
+                <div key={item.role} className="flex gap-4 items-start rounded-2xl border p-4" style={{ borderColor: C.border }}>
+                  <span className="w-2 h-2 rounded-full mt-2 shrink-0" style={{ backgroundColor: C.amber }} />
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: C.navy }}>{item.role}</p>
+                    <p className="text-sm mt-0.5" style={{ color: "#7a8099" }}>{item.detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => navigate("public-care-team")} className="mt-8 px-7 py-3.5 rounded-full text-sm font-semibold" style={{ backgroundColor: C.navy, color: "white" }}>
+              How care teams work
+            </button>
+          </div>
+
+          <div className="rounded-3xl p-7 sm:p-9" style={{ backgroundColor: C.navy }}>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: C.amber }}>Health Passport</p>
+            <h3 className="text-2xl sm:text-3xl font-bold mb-4" style={{ fontFamily: "var(--font-display)", color: "white", lineHeight: 1.15 }}>
+              A summary you can hand over in seconds.
+            </h3>
+            <p className="text-sm leading-relaxed mb-7" style={{ color: "rgba(255,255,255,0.65)" }}>
+              Blood group, allergies, conditions, current medicines and your care team — shared by link or QR code, scoped to
+              what you choose, and expiring when you say so.
+            </p>
+            <div className="rounded-2xl p-5 mb-7" style={{ backgroundColor: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.14)" }}>
+              {[
+                ["Always included", "Identity, blood group, allergies"],
+                ["Your choice", "Conditions, medicines, care team, summaries"],
+                ["Never automatic", "Full clinical notes and private conversations"],
+              ].map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-4 py-2.5 text-sm" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                  <span style={{ color: "rgba(255,255,255,0.45)" }}>{label}</span>
+                  <span className="text-right font-medium" style={{ color: "white" }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => navigate("public-health-passport")} className="px-7 py-3.5 rounded-full text-sm font-semibold" style={{ backgroundColor: C.amber, color: "white" }}>
+              Explore the Health Passport
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Docura Proxy ───────────────────────────────────── */}
+      <section
+        ref={proxySection.ref as React.RefObject<HTMLElement>}
+        style={{ backgroundColor: "#EAF4F1", ...fadeStyle(proxySection.visible) }}
+        className="py-20 md:py-28 px-5 sm:px-6"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="max-w-2xl mb-12">
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.navy }}>Docura Proxy</p>
+            <h2 className="mb-5" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 3.6vw, 3rem)", color: C.navy, fontWeight: 700, lineHeight: 1.1 }}>
+              Healthcare coordination for people who care for others.
+            </h2>
+            <p className="text-base leading-relaxed" style={{ color: "#55736D" }}>
+              Look after a parent, a child or someone who needs support — with access the patient grants deliberately,
+              scoped to what is needed, and withdrawn the moment it should be.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              { step: "01", title: "The patient invites you", body: "Coordination always begins with the person whose record it is. Nothing is shared before they accept." },
+              { step: "02", title: "They choose the scopes", body: "Medicines, appointments, documents, payments — each one granted separately." },
+              { step: "03", title: "You coordinate care", body: "Book consultations, track medicines, message the care team — visibly to the patient." },
+              { step: "04", title: "Access ends", body: "Every delegation expires, and can be revoked at any moment without a reason." },
+            ].map((item) => (
+              <div key={item.step} className="rounded-2xl p-6" style={{ backgroundColor: "white" }}>
+                <span className="text-3xl font-bold" style={{ color: "#D7E9E4", fontFamily: "var(--font-display)" }}>{item.step}</span>
+                <p className="font-semibold mt-3" style={{ color: C.navy }}>{item.title}</p>
+                <p className="text-sm mt-2 leading-relaxed" style={{ color: "#55736D" }}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5" style={{ backgroundColor: "white" }}>
+            <p className="text-sm leading-relaxed max-w-xl" style={{ color: "#55736D" }}>
+              <strong style={{ color: C.navy }}>Delegation is not ownership.</strong> A proxy coordinates care; the patient
+              remains the owner of their health record and can see everything a coordinator does.
+            </p>
+            <button onClick={() => navigate("public-proxy")} className="px-7 py-3.5 rounded-full text-sm font-semibold shrink-0" style={{ backgroundColor: C.navy, color: "white" }}>
+              How Docura Proxy works
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Health Intelligence ────────────────────────────── */}
+      <section
+        ref={intelligence.ref as React.RefObject<HTMLElement>}
+        style={{ backgroundColor: "#FAFAF8", ...fadeStyle(intelligence.visible) }}
+        className="py-20 md:py-28 px-5 sm:px-6"
+      >
+        <div className="max-w-7xl mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-12 lg:gap-16 items-start">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Health intelligence</p>
+            <h2 className="mb-5" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 3.6vw, 3rem)", color: C.navy, fontWeight: 700, lineHeight: 1.1 }}>
+              Intelligence that helps people understand care.
+            </h2>
+            <p className="text-base leading-relaxed mb-6" style={{ color: "#5c6580" }}>
+              Docura uses AI to organise, summarise and translate — so patients can follow what is happening and doctors
+              spend their time on care rather than paperwork.
+            </p>
+            <div className="rounded-2xl p-5" style={{ backgroundColor: C.amberLight }}>
+              <p className="text-sm font-semibold mb-1" style={{ color: C.navy }}>Assistive, never autonomous</p>
+              <p className="text-sm leading-relaxed" style={{ color: "#7a6a4a" }}>
+                Docura's intelligence layer does not diagnose, prescribe or decide anything clinical. A licensed doctor
+                reviews and takes responsibility for every clinical decision.
+              </p>
+            </div>
+            <button onClick={() => navigate("public-intelligence")} className="mt-7 px-7 py-3.5 rounded-full text-sm font-semibold" style={{ backgroundColor: C.navy, color: "white" }}>
+              How Docura uses AI
+            </button>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              { icon: "🗒️", title: "Consultation summaries", body: "Plain-language recaps of what was discussed and decided." },
+              { icon: "🧾", title: "SOAP note drafts", body: "A structured starting point the doctor reviews, edits and signs off." },
+              { icon: "🗣️", title: "Translation", body: "Patients and doctors understand each other across languages." },
+              { icon: "📈", title: "Chronic monitoring", body: "Trends in readings and adherence, flagged to your doctor." },
+              { icon: "🛟", title: "Safety checks", body: "Interaction and missing-information prompts that ask a human to look." },
+              { icon: "💬", title: "AI receptionist", body: "Captures why you are here and routes you to the right kind of care." },
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl border p-6" style={{ backgroundColor: "white", borderColor: C.border }}>
+                <span className="text-2xl">{item.icon}</span>
+                <p className="font-semibold mt-3" style={{ color: C.navy }}>{item.title}</p>
+                <p className="text-sm mt-1.5 leading-relaxed" style={{ color: "#7a8099" }}>{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Hospitals & organisations ──────────────────────── */}
+      <section
+        ref={hospitals.ref as React.RefObject<HTMLElement>}
+        style={{ backgroundColor: C.navy, ...fadeStyle(hospitals.visible) }}
+        className="py-20 md:py-28 px-5 sm:px-6"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Hospitals & organisations</p>
+              <h2 className="mb-5" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 3.6vw, 3rem)", color: "white", fontWeight: 700, lineHeight: 1.1 }}>
+                Extend care beyond your walls.
+              </h2>
+              <p className="text-base leading-relaxed mb-8" style={{ color: "rgba(255,255,255,0.65)", maxWidth: 520 }}>
+                Referral pathways, discharge follow-up and employee healthcare — coordinated through Docura, measured at an
+                aggregate level, and bounded by clear privacy rules.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button onClick={() => navigate("public-hospitals")} className="px-7 py-3.5 rounded-full text-sm font-semibold" style={{ backgroundColor: C.amber, color: "white" }}>
+                  Partner with Docura
+                </button>
+                <button onClick={() => navigate("public-referrals")} className="px-7 py-3.5 rounded-full text-sm font-semibold border" style={{ borderColor: "rgba(255,255,255,0.3)", color: "white" }}>
+                  See how referrals work
+                </button>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { title: "Referral pathways", body: "Structured referrals with a clinical letter and a consented summary." },
+                { title: "Discharge follow-up", body: "Patients leave with a Docura doctor following up on their recovery." },
+                { title: "Employee health", body: "Annual checks, chronic support and mental wellbeing for your workforce." },
+                { title: "Aggregate reporting", body: "Enrolment, participation and outcomes — never an individual's record." },
+              ].map((item) => (
+                <div key={item.title} className="rounded-2xl p-6" style={{ backgroundColor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <p className="font-semibold" style={{ color: "white" }}>{item.title}</p>
+                  <p className="text-sm mt-2 leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>{item.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-10 rounded-2xl p-6" style={{ backgroundColor: "rgba(255,255,255,0.06)" }}>
+            <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.7)" }}>
+              <strong style={{ color: "white" }}>Where the line sits:</strong> partners receive the referral and the summary
+              the patient consented to share. Doctor-patient conversations are never shared with an employer or a hospital.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Docura TV ──────────────────────────────────────── */}
+      <section
+        ref={tv.ref as React.RefObject<HTMLElement>}
+        style={{ backgroundColor: "white", ...fadeStyle(tv.visible) }}
+        className="py-20 md:py-28 px-5 sm:px-6"
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Docura TV</p>
+              <h2 className="mb-4" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 3.6vw, 3rem)", color: C.navy, fontWeight: 700, lineHeight: 1.1 }}>
+                Health education from people who are actually qualified.
+              </h2>
+              <p className="text-base leading-relaxed" style={{ color: "#5c6580" }}>
+                Short explainers from verified healthcare professionals — every creator licence-checked before they can
+                publish, every video reviewed against a clinical content policy.
+              </p>
+            </div>
+            <button onClick={() => navigate("tv-home")} className="px-7 py-3.5 rounded-full text-sm font-semibold shrink-0" style={{ backgroundColor: C.navy, color: "white" }}>
+              Explore Docura TV
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {LANDING_TV.map((item) => (
+              <button key={item.id} onClick={() => navigate("tv-content", { contentId: item.id })} className="text-left group">
+                <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-gray-100">
+                  <img src={item.thumb} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,0.75) 100%)" }} />
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <p className="text-white text-sm font-semibold leading-snug line-clamp-2">{item.title}</p>
+                    <p className="text-white/70 text-[11px] mt-1 truncate">{item.creator}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs mt-6" style={{ color: "#7a8099" }}>
+            Docura TV is general health education. For advice about your own health, start a consultation.
+          </p>
+        </div>
+      </section>
+
+      {/* ── FAQ ────────────────────────────────────────────── */}
+      <section
+        ref={faq.ref as React.RefObject<HTMLElement>}
+        style={{ backgroundColor: "#FAFAF8", ...fadeStyle(faq.visible) }}
+        className="py-20 md:py-28 px-5 sm:px-6"
+      >
+        <div className="max-w-3xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest mb-5" style={{ color: C.amber }}>Questions</p>
+          <h2 className="mb-10" style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.9rem, 3.6vw, 3rem)", color: C.navy, fontWeight: 700, lineHeight: 1.1 }}>
+            What people ask before they start.
+          </h2>
+
+          <div className="flex flex-col gap-2">
+            {LANDING_FAQS.map((item) => (
+              <div key={item.q} className="rounded-2xl border" style={{ backgroundColor: "white", borderColor: C.border }}>
+                <button onClick={() => setOpenFaq(openFaq === item.q ? null : item.q)} className="w-full flex items-center justify-between gap-4 p-5 text-left">
+                  <span className="text-sm font-semibold" style={{ color: C.navy }}>{item.q}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7a8099" strokeWidth="2" strokeLinecap="round" className="shrink-0" style={{ transform: openFaq === item.q ? "rotate(180deg)" : "none", transition: "transform 150ms" }}>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+                {openFaq === item.q && <p className="px-5 pb-5 text-sm leading-relaxed" style={{ color: "#7a8099" }}>{item.a}</p>}
+              </div>
+            ))}
+          </div>
+
+          <button onClick={() => navigate("public-faq")} className="mt-8 text-sm font-semibold" style={{ color: C.amber }}>
+            Read all frequently asked questions →
+          </button>
         </div>
       </section>
 
@@ -1239,7 +1554,7 @@ export default function Landing() {
               Get Started
             </button>
             <button
-              onClick={() => navigate("docura-now-flow")}
+              onClick={() => startFlow("docura-now-flow")}
               className="px-8 py-4 text-sm font-semibold rounded-full border transition-colors hover:bg-white/10"
               style={{ borderColor: "rgba(255,255,255,0.35)", color: "white" }}
             >
@@ -1249,58 +1564,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ── Footer ─────────────────────────────────────────── */}
-      <footer style={{ backgroundColor: C.navy }} className="px-6 pt-16 pb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-5 gap-10 mb-14">
-            <div className="md:col-span-2">
-              <LandingLogo size={32} />
-              <p
-                className="mt-4 text-sm leading-relaxed"
-                style={{ color: "rgba(255,255,255,0.45)", maxWidth: 240 }}
-              >
-                Your healthcare home.<br />Anywhere. Anytime.
-              </p>
-            </div>
-
-            {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-              <div key={title}>
-                <h4
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
-                  style={{ color: "rgba(255,255,255,0.35)" }}
-                >
-                  {title}
-                </h4>
-                <ul className="flex flex-col gap-2.5">
-                  {links.map(({ label, page }) => (
-                    <li key={label}>
-                      <button
-                        onClick={() => navigate(page)}
-                        className="text-sm transition-colors hover:text-white"
-                        style={{ color: "rgba(255,255,255,0.56)" }}
-                      >
-                        {label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div
-            className="border-t pt-6 flex flex-col md:flex-row items-center justify-between gap-3"
-            style={{ borderColor: "rgba(255,255,255,0.08)" }}
-          >
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-              © 2025 Docura Health Ltd. All rights reserved.
-            </p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
-              Verified doctors · Secure care · Global reach
-            </p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

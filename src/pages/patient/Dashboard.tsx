@@ -1,7 +1,7 @@
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
 import { Avatar, VerifiedBadge, AvailabilityDot, C } from "@/components/ui";
-import { PATIENT, DOCTORS, CONSULTATIONS, CARE_PLANS, FOLLOW_UPS, MEDICATIONS } from "@/data/mock";
+import { PATIENT, DOCTORS, CONSULTATIONS, MEDICATIONS } from "@/data/mock";
 
 const CARD = { backgroundColor: "white", border: "1px solid rgba(21,95,84,0.08)", borderRadius: 20, boxShadow: "0 12px 32px rgba(21,95,84,0.05)" };
 const BG = "#FAFAF7";
@@ -28,8 +28,8 @@ export default function PatientDashboard() {
   const activeSubscription = domain.subscriptions.find((subscription) => subscription.patientId === PATIENT.id && subscription.status === "active");
   const doc = DOCTORS.find((d) => d.id === (activeSubscription?.doctorId || PATIENT.personalDoctorId))!;
   const prescDoc = DOCTORS.find((d) => d.id === PATIENT.prescribingDoctorId)!;
-  const activePlan = CARE_PLANS.find((p) => p.status === "active");
-  const upcomingFollowUp = FOLLOW_UPS.find((f) => f.status === "upcoming");
+  const activePlan = domain.carePlans.find((p) => p.status === "active");
+  const upcomingFollowUp = domain.followUps.find((f) => f.status === "upcoming");
   const currentMeds = MEDICATIONS.filter((m) => m.status === "current");
   const medsTaken = currentMeds.filter((m) => m.todayTaken).length;
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
@@ -178,18 +178,18 @@ export default function PatientDashboard() {
               </button>
             )}
 
-            {/* Health Passport quick link */}
+            {/* Documents quick link */}
             <button
-              onClick={() => navigate("health-passport")}
+              onClick={() => navigate("medical-documents")}
               className="p-4 flex items-center gap-3 text-left transition-all hover:opacity-90 w-full"
               style={{ ...CARD, background: `linear-gradient(135deg, #e8f0ff 0%, #f3e8ff 100%)` }}
             >
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "white" }}>
-                <span style={{ fontSize: 20 }}>🛂</span>
+                <span style={{ fontSize: 20 }}>▣</span>
               </div>
               <div>
-                <p className="text-sm font-bold" style={{ color: C.navy }}>Health Passport</p>
-                <p className="text-xs" style={{ color: "#8892a4" }}>Share your health profile globally</p>
+                <p className="text-sm font-bold" style={{ color: C.navy }}>Medical documents</p>
+                <p className="text-xs" style={{ color: "#8892a4" }}>Keep your reports and results together</p>
               </div>
               <div className="ml-auto" style={{ color: "#a0a9bc" }}><Ico type="arrow" /></div>
             </button>
@@ -295,6 +295,10 @@ export default function PatientDashboard() {
                   { label: "Care Plans", page: "patient-care-plans", bg: "#f0e7ff", color: "#8b5cf6", icon: "📋" },
                   { label: "Care Journey", page: "care-journey", bg: "#e7effc", color: "#0ea5e9", icon: "🗺" },
                   { label: "Emergency", page: "emergency-card", bg: "#fce7e7", color: "#e85d40", icon: "🚨" },
+                  { label: "Health Passport", page: "health-passport", bg: "#e6f1ee", color: C.navy, icon: "🛂" },
+                  { label: "Referrals", page: "patient-referrals", bg: "#fff7e6", color: C.amber, icon: "🔗" },
+                  { label: "Docura TV", page: "tv-home", bg: "#f0e7ff", color: "#8b5cf6", icon: "▶" },
+                  { label: "Support", page: "support-center", bg: "#e7effc", color: "#0ea5e9", icon: "🛟" },
                 ].map((q) => (
                   <button key={q.page} onClick={() => navigate(q.page)}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all hover:opacity-85"
@@ -314,8 +318,8 @@ export default function PatientDashboard() {
           {[
             { label: "Consultations", value: CONSULTATIONS.length, sub: "this year", color: C.amber, bg: C.amberLight, page: "patient-consultations" },
             { label: "Active Meds", value: currentMeds.length, sub: `${medsTaken} taken today`, color: "#16a34a", bg: "#dcfce7", page: "patient-medications" },
-            { label: "Care Plans", value: CARE_PLANS.filter(p => p.status === "active").length, sub: activePlan ? `${activePlan.progress}% progress` : "active", color: "#8b5cf6", bg: "#f0e7ff", page: "patient-care-plans" },
-            { label: "Follow-ups", value: FOLLOW_UPS.filter(f => f.status === "upcoming").length, sub: "upcoming", color: "#0ea5e9", bg: "#e7effc", page: "follow-ups" },
+            { label: "Care Plans", value: domain.carePlans.filter(p => p.status === "active").length, sub: activePlan ? `${activePlan.progress}% progress` : "active", color: "#8b5cf6", bg: "#f0e7ff", page: "patient-care-plans" },
+            { label: "Follow-ups", value: domain.followUps.filter(f => f.status === "upcoming").length, sub: "upcoming", color: "#0ea5e9", bg: "#e7effc", page: "follow-ups" },
           ].map((s) => (
             <button
               key={s.label}

@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
 import { Avatar, Badge, Button, C, EmptyState, Tabs } from "@/components/ui";
-import { FOLLOW_UPS } from "@/data/mock";
 import { useApp } from "@/context/AppContext";
 
-type FollowUp = typeof FOLLOW_UPS[0];
+type FollowUp = ReturnType<typeof useApp>["domain"]["followUps"][number];
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("en-GB", {
@@ -140,9 +139,10 @@ function MissedCard({ fu }: { fu: FollowUp }) {
 const TABS = ["Upcoming", "Completed", "Missed"];
 
 export default function FollowUps() {
+  const { domain } = useApp();
   const [activeTab, setActiveTab] = useState("Upcoming");
 
-  const filtered = FOLLOW_UPS.filter((fu) => {
+  const filtered = domain.followUps.filter((fu) => {
     if (activeTab === "Upcoming") return fu.status === "upcoming";
     if (activeTab === "Completed") return fu.status === "completed";
     if (activeTab === "Missed") return fu.status === "missed";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Button, Card, Avatar, VerifiedBadge, Badge, C, AlertBanner } from "@/components/ui";
+import { Button, Card, Avatar, VerifiedBadge, Badge, C } from "@/components/ui";
 import { DOCTORS } from "@/data/mock";
 
 type Step = "choose" | "payment" | "processing" | "success";
@@ -155,12 +155,12 @@ function SuccessStep({ doctorId, onDone }: { doctorId: string; onDone: () => voi
 }
 
 export default function DocuraCare() {
-  const { params, navigate, activateSubscription } = useApp();
+  const { params, navigate, activateSubscription, role } = useApp();
   const doctorId = params.doctorId || "d1";
   const [step, setStep] = useState<Step>("choose");
 
   return (
-    <AppShell role="patient" topBarTitle="Docura Care" showTopBarBack>
+    <AppShell role={role} topBarTitle="Docura Care" showTopBarBack>
       {step === "choose" && <ChooseStep doctorId={doctorId} onNext={() => setStep("payment")} />}
       {step === "payment" && <PaymentStep doctorId={doctorId} onPay={() => { const doctor = DOCTORS.find((item) => item.id === doctorId) || DOCTORS[0]; activateSubscription({ doctorId, price: doctor.monthlyPrice, currency: doctor.currency }); setStep("success"); }} />}
       {step === "success" && <SuccessStep doctorId={doctorId} onDone={() => navigate("patient-chat")} />}

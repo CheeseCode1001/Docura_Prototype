@@ -1,229 +1,31 @@
 import { AppShell } from "@/components/layout";
-import {
-  C,
-  Button,
-  Card,
-  Badge,
-  ProgressBar,
-  AlertBanner,
-  SectionHeader,
-  Divider,
-} from "@/components/ui";
+import { AlertBanner, Badge, Button, Card, C, ProgressBar, SectionHeader } from "@/components/ui";
 import { useApp } from "@/context/AppContext";
-import { PATIENT, MEDICATIONS, CARE_PLANS } from "@/data/mock";
+import { MEDICATIONS, PATIENT } from "@/data/mock";
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
-function PillIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
-      <path d="m8.5 8.5 7 7" />
-    </svg>
-  );
+function HealthMetric({ label, value, detail, page }: { label: string; value: string | number; detail: string; page: string }) {
+  const { navigate } = useApp();
+  return <button onClick={() => navigate(page)} className="rounded-2xl border p-4 text-left transition-colors hover:border-amber-300" style={{ backgroundColor: "white", borderColor: C.border }}><p className="text-2xl font-bold" style={{ color: C.navy }}>{value}</p><p className="text-sm font-semibold mt-1" style={{ color: C.navy }}>{label}</p><p className="text-xs mt-1" style={{ color: C.muted }}>{detail}</p></button>;
 }
 
-function CalendarIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-
-function ChatIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function CheckboxItem({ label }: { label: string }) {
-  return (
-    <div className="flex items-start gap-3 py-2">
-      <div
-        className="mt-0.5 flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center"
-        style={{ borderColor: C.amber, backgroundColor: C.amberLight }}
-      >
-        <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: C.amber }} />
-      </div>
-      <span className="text-sm leading-relaxed" style={{ color: C.label }}>{label}</span>
-    </div>
-  );
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 export default function HealthIntelligence() {
-  const { navigate, back } = useApp();
-
-  const currentMeds = MEDICATIONS.filter((m) => m.status === "current");
-  const recentCarePlans = [...CARE_PLANS].slice(0, 2);
-
-  const smartPrompts = [
-    "Review blood sugar readings from this week",
-    "Discuss Metformin dosage effectiveness",
-    "Ask about exercise recommendations with hypertension",
-  ];
+  const { navigate, domain } = useApp();
+  const currentMeds = MEDICATIONS.filter((item) => item.status === "current");
+  const activePlans = domain.carePlans.filter((item) => item.status === "active");
+  const upcomingFollowUps = domain.followUps.filter((item) => item.status === "upcoming");
+  const recentConsultations = domain.consultations.slice(-3).reverse();
+  const activePrescriptions = domain.prescriptions.filter((item) => item.status === "active");
 
   return (
-    <AppShell role="patient">
-      {/* Page Header */}
-      <div className="mb-6">
-        <SectionHeader
-          title="Health Intelligence"
-          subtitle="Your health, organized."
-        />
-      </div>
-
-      {/* Clinical Disclaimer */}
-      <div className="mb-6">
-        <AlertBanner
-          type="info"
-          title="Clinical disclaimer"
-          body="This summary is generated from your Docura records. All clinical decisions should be discussed with your doctor."
-        />
-      </div>
-
-      {/* 6-section Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-
-        {/* 1. Current Conditions */}
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: C.muted }}>
-            Current Conditions
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {PATIENT.conditions.map((cond) => (
-              <span
-                key={cond}
-                className="px-3 py-1.5 rounded-full text-sm font-medium"
-                style={{ backgroundColor: "#FEF3DC", color: C.amber }}
-              >
-                {cond}
-              </span>
-            ))}
-          </div>
-        </Card>
-
-        {/* 2. Current Medications */}
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: C.muted }}>
-            Current Medications
-          </p>
-          <ul className="space-y-2">
-            {currentMeds.map((med) => (
-              <li key={med.id} className="flex items-center gap-2.5">
-                <span style={{ color: C.amber }}>
-                  <PillIcon />
-                </span>
-                <span className="text-sm" style={{ color: C.label }}>
-                  <span className="font-semibold">{med.name}</span>{" "}
-                  <span style={{ color: C.muted }}>{med.dosage} — {med.frequency}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        {/* 3. Recent Care */}
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: C.muted }}>
-            Recent Care
-          </p>
-          <ul className="space-y-3">
-            {recentCarePlans.map((cp) => (
-              <li key={cp.id} className="flex items-start gap-2.5">
-                <span className="mt-0.5" style={{ color: C.amber }}>
-                  <CalendarIcon />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: C.label }}>{cp.doctorName}</p>
-                  <p className="text-xs" style={{ color: C.muted }}>Next review: {cp.nextReview}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        {/* 4. Active Care Plans */}
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: C.muted }}>
-            Active Care Plans
-          </p>
-          <ul className="space-y-4">
-            {CARE_PLANS.map((cp) => (
-              <li key={cp.id}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium" style={{ color: C.label }}>{cp.title}</span>
-                  <Badge variant="amber">{cp.progress}%</Badge>
-                </div>
-                <ProgressBar value={cp.progress} max={100} />
-              </li>
-            ))}
-          </ul>
-        </Card>
-
-        {/* 5. Things to Discuss */}
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: C.muted }}>
-            Things to Discuss
-          </p>
-          <p className="text-xs mb-3" style={{ color: C.muted }}>Smart prompts for your next appointment</p>
-          <div className="flex items-center gap-1.5 mb-2">
-            <span style={{ color: C.amber }}>
-              <ChatIcon />
-            </span>
-            <span className="text-xs font-medium" style={{ color: C.amber }}>Suggested topics</span>
-          </div>
-          <Divider />
-          <div>
-            {smartPrompts.map((prompt) => (
-              <CheckboxItem key={prompt} label={prompt} />
-            ))}
-          </div>
-        </Card>
-
-        {/* 6. Upcoming Follow-ups */}
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: C.muted }}>
-            Upcoming Follow-ups
-          </p>
-          <div
-            className="rounded-xl p-4 flex items-start gap-3"
-            style={{ backgroundColor: C.warm, border: `1px solid ${C.border}` }}
-          >
-            <div
-              className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: C.amberLight }}
-            >
-              <CalendarIcon />
-            </div>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: C.navy }}>September 18, 2025</p>
-              <p className="text-xs mt-0.5" style={{ color: C.label }}>Dr. Amara Osei</p>
-              <p className="text-xs" style={{ color: C.muted }}>Diabetes review</p>
-            </div>
-          </div>
-        </Card>
-
-      </div>
-
-      {/* Bottom CTA */}
-      <div
-        className="rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4"
-        style={{ backgroundColor: C.warm, border: `1px solid ${C.border}` }}
-      >
-        <div>
-          <p className="text-sm font-semibold" style={{ color: C.navy }}>Have a question for your doctor?</p>
-          <p className="text-xs mt-0.5" style={{ color: C.muted }}>Send a message directly from Docura.</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" onClick={back}>Back to dashboard</Button>
-          <Button variant="primary" onClick={() => navigate("patient-chat")}>Message your doctor</Button>
-        </div>
+    <AppShell role="patient" topBarTitle="Health overview">
+      <div className="px-4 md:px-6 py-6 flex flex-col gap-6" style={{ fontFamily: "var(--font-body)" }}>
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-widest font-semibold" style={{ color: C.amber }}>My health</p><h1 className="text-3xl font-bold mt-1" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Your health at a glance.</h1><p className="text-sm mt-2" style={{ color: C.muted }}>A calm summary of your active care, medicines, and next steps.</p></div><Button size="sm" onClick={() => navigate("medical-documents")}>Open documents</Button></div>
+        <AlertBanner type="info" title="Your care, your decisions" body="This overview organizes your Docura records. Discuss any clinical changes with your doctor." />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3"><HealthMetric label="Conditions" value={PATIENT.conditions.length} detail="In your health record" page="health-record" /><HealthMetric label="Current medicines" value={currentMeds.length} detail="View reminders and doses" page="patient-medications" /><HealthMetric label="Care plans" value={activePlans.length} detail="Active plans" page="patient-care-plans" /><HealthMetric label="Follow-ups" value={upcomingFollowUps.length} detail="Upcoming appointments" page="follow-ups" /></div>
+        <div className="grid lg:grid-cols-2 gap-5"><Card><SectionHeader title="Health snapshot" action="Open record" onAction={() => navigate("health-record")} /><div className="grid sm:grid-cols-2 gap-3"><div className="rounded-xl p-4" style={{ backgroundColor: C.warm }}><p className="text-xs" style={{ color: C.muted }}>Blood group</p><p className="text-lg font-bold mt-1" style={{ color: C.navy }}>{PATIENT.bloodGroup}</p></div><div className="rounded-xl p-4" style={{ backgroundColor: C.warm }}><p className="text-xs" style={{ color: C.muted }}>Allergies</p><p className="text-sm font-semibold mt-1" style={{ color: C.navy }}>{PATIENT.allergies.join(", ")}</p></div></div><div className="mt-4"><p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: C.muted }}>Conditions</p><div className="flex flex-wrap gap-2">{PATIENT.conditions.map((condition) => <Badge key={condition} variant="amber">{condition}</Badge>)}</div></div></Card><Card><SectionHeader title="Current medication" action="Manage" onAction={() => navigate("patient-medications")} />{currentMeds.map((medication) => <div key={medication.id} className="flex items-center justify-between gap-3 py-3 border-b last:border-0" style={{ borderColor: C.border }}><div><p className="text-sm font-semibold" style={{ color: C.navy }}>{medication.name}</p><p className="text-xs mt-1" style={{ color: C.muted }}>{medication.dosage} · {medication.frequency}</p></div><Badge variant={medication.todayTaken ? "green" : "yellow"}>{medication.todayTaken ? "Taken today" : "Due today"}</Badge></div>)}</Card></div>
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-5"><Card><SectionHeader title="Care plans" action="View all" onAction={() => navigate("patient-care-plans")} />{activePlans.map((plan) => <button key={plan.id} onClick={() => navigate("patient-care-plans")} className="w-full text-left py-3 border-b last:border-0" style={{ borderColor: C.border }}><div className="flex justify-between gap-3 mb-2"><p className="text-sm font-semibold" style={{ color: C.navy }}>{plan.title}</p><span className="text-xs font-bold" style={{ color: C.amber }}>{plan.progress}%</span></div><ProgressBar value={plan.progress} /><p className="text-xs mt-2 truncate" style={{ color: C.muted }}>{plan.goal}</p></button>)}</Card><Card><SectionHeader title="Next steps" action="Follow-ups" onAction={() => navigate("follow-ups")} />{upcomingFollowUps.slice(0, 3).map((followUp) => <button key={followUp.id} onClick={() => navigate("follow-ups")} className="w-full text-left py-3 border-b last:border-0" style={{ borderColor: C.border }}><div className="flex items-center justify-between"><p className="text-sm font-semibold" style={{ color: C.navy }}>{followUp.scheduledDate}</p><Badge variant="amber">Upcoming</Badge></div><p className="text-xs mt-1" style={{ color: C.muted }}>{followUp.reason}</p></button>)}</Card></div>
+        <Card><SectionHeader title="Recent health activity" action="Open timeline" onAction={() => navigate("health-timeline")} />{recentConsultations.map((consultation) => <button key={consultation.id} onClick={() => navigate("patient-consultations")} className="w-full flex items-center gap-3 py-3 border-b last:border-0 text-left" style={{ borderColor: C.border }}><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: consultation.type === "now" ? C.amber : C.navy }} /><div className="flex-1"><p className="text-sm font-semibold" style={{ color: C.navy }}>{consultation.type === "now" ? "Docura Now consultation" : "Care consultation"}</p><p className="text-xs mt-1" style={{ color: C.muted }}>{consultation.summary}</p></div><span className="text-xs" style={{ color: C.muted }}>{consultation.date}</span></button>)}{!recentConsultations.length && <p className="text-sm py-4" style={{ color: C.muted }}>Your completed care activity will appear here.</p>}</Card>
+        <div className="flex flex-wrap gap-3"><Button variant="outline" onClick={() => navigate("patient-prescriptions")}>{activePrescriptions.length} active prescription{activePrescriptions.length === 1 ? "" : "s"}</Button><Button variant="outline" onClick={() => navigate("patient-chat")}>Message your doctor</Button><Button onClick={() => navigate("docura-now-flow")}>Talk to a doctor</Button></div>
       </div>
     </AppShell>
   );

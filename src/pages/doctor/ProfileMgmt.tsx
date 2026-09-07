@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Card, Button, Input, C, VerifiedBadge, Badge, ProgressBar } from "@/components/ui";
+import { Card, Button, Input, C, VerifiedBadge, ProgressBar } from "@/components/ui";
 import { DOCTORS } from "@/data/mock";
 import { useApp } from "@/context/AppContext";
 

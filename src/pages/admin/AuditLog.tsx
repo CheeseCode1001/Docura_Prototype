@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { C, Button, Badge, EmptyState, SectionHeader } from "@/components/ui";
+import { C, Button, Badge, EmptyState } from "@/components/ui";
 import { useApp } from "@/context/AppContext";
 import { AUDIT_LOG } from "@/data/mock";
 

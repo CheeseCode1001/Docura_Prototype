@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Badge, Button, C, EmptyState, Modal, ProgressBar, SectionHeader, Divider } from "@/components/ui";
-import { CARE_PLANS } from "@/data/mock";
+import { Badge, Button, C, EmptyState, Modal, ProgressBar, Divider } from "@/components/ui";
 import { useApp } from "@/context/AppContext";
 
-type Plan = typeof CARE_PLANS[0];
+type Plan = ReturnType<typeof useApp>["domain"]["carePlans"][number];
 
 function PlanDetailModal({ plan, onClose }: { plan: Plan; onClose: () => void }) {
   const { addToast } = useApp();
@@ -273,6 +272,8 @@ function PlanCard({ plan }: { plan: Plan }) {
 }
 
 export default function CarePlans() {
+  const { domain } = useApp();
+  const carePlans = domain.carePlans;
   return (
     <AppShell role="patient" topBarTitle="Care Plans" showTopBarBack>
       <div className="px-4 md:px-6 py-6 flex flex-col gap-6">
@@ -288,14 +289,14 @@ export default function CarePlans() {
           </p>
         </div>
 
-        {CARE_PLANS.length === 0 ? (
+        {carePlans.length === 0 ? (
           <EmptyState
             icon={<span className="text-3xl">📋</span>}
             title="No care plans yet"
             body="Your doctor will create care plans to help you manage your health."
           />
         ) : (
-          CARE_PLANS.map((plan) => <PlanCard key={plan.id} plan={plan} />)
+          carePlans.map((plan) => <PlanCard key={plan.id} plan={plan} />)
         )}
       </div>
     </AppShell>

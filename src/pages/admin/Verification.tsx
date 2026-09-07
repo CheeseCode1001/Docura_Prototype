@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Card, Badge, Button, Avatar, C, Modal, AlertBanner, Table } from "@/components/ui";
+import { Badge, Button, C, Modal, AlertBanner, Table } from "@/components/ui";
 import { PENDING_VERIFICATIONS } from "@/data/mock";
 
 type VerifDoc = typeof PENDING_VERIFICATIONS[0];

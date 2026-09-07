@@ -10,11 +10,11 @@ const REVIEWS = [
 ];
 
 export default function DoctorProfile() {
-  const { navigate, params } = useApp();
+  const { navigate, params, role } = useApp();
   const doc = DOCTORS.find((d) => d.id === (params.doctorId || "d1")) || DOCTORS[0];
 
   return (
-    <AppShell role="patient" showTopBarBack topBarTitle="">
+    <AppShell role={role} showTopBarBack topBarTitle="">
       <div className="w-full">
         {/* Hero */}
         <div className="px-4 md:px-6 py-6">
@@ -34,7 +34,7 @@ export default function DoctorProfile() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 mt-5">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-5">
             {[
               { label: "Experience", value: `${doc.experience} yrs` },
               { label: "Patients", value: doc.patients },

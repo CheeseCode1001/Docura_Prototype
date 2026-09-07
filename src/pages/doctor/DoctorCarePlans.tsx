@@ -14,7 +14,7 @@ function isDueSoon(dateStr: string) {
 }
 
 export default function DoctorCarePlans() {
-  const { addToast } = useApp();
+  const { addToast, navigate, createCarePlan, domain } = useApp();
 
   const [updateTarget, setUpdateTarget] = useState<CarePlan | null>(null);
   const [updateNote, setUpdateNote] = useState("");
@@ -44,13 +44,39 @@ export default function DoctorCarePlans() {
       addToast("error", "Please fill in all required fields");
       return;
     }
-    addToast("success", "Care plan created");
+    // The plan lands in shared state, so it appears on the patient's Care Plans
+    // page and generates a notification for them.
+    createCarePlan({
+      title: newTitle,
+      goal: newGoal || "Goal to be agreed at the next review",
+      doctorId: "d1",
+      doctorName: "Dr. Amara Osei",
+      recommendations: newRecs.filter((item) => item.trim().length > 0),
+    });
+    addToast("success", `Care plan created for ${newPatient} and shared with them`);
     setShowNewModal(false);
     setNewPatient("");
     setNewTitle("");
     setNewGoal("");
     setNewRecs(["", "", ""]);
   }
+
+  // Seeded doctor-view plans plus anything created in this session.
+  const plans: CarePlan[] = [
+    ...domain.carePlans
+      .filter((plan) => plan.doctorId === "d1" && !DOCTOR_CARE_PLANS.some((seed) => seed.title === plan.title))
+      .map((plan) => ({
+        id: plan.id,
+        patient: "Adaeze Okafor",
+        patientPhoto: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=200&h=200&fit=crop&crop=face",
+        title: plan.title,
+        status: "active" as const,
+        progress: plan.progress,
+        nextReview: plan.nextReview,
+        lastUpdated: plan.lastUpdated,
+      })),
+    ...DOCTOR_CARE_PLANS,
+  ];
 
   return (
     <AppShell role="doctor">
@@ -62,7 +88,7 @@ export default function DoctorCarePlans() {
           onAction={() => setShowNewModal(true)}
         />
 
-        {DOCTOR_CARE_PLANS.length === 0 ? (
+        {plans.length === 0 ? (
           <EmptyState
             icon={<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /></svg>}
             title="No care plans yet"
@@ -72,7 +98,7 @@ export default function DoctorCarePlans() {
           />
         ) : (
           <div className="space-y-4">
-            {DOCTOR_CARE_PLANS.map((plan) => (
+            {plans.map((plan) => (
               <Card key={plan.id}>
                 <div className="flex items-start gap-4">
                   <Avatar src={plan.patientPhoto} name={plan.patient} size={44} />
@@ -108,7 +134,7 @@ export default function DoctorCarePlans() {
                     </div>
 
                     <div className="flex gap-2 mt-4">
-                      <Button size="sm" variant="outline" onClick={() => addToast("info", "Viewing " + plan.title)}>View plan</Button>
+                      <Button size="sm" variant="outline" onClick={() => navigate("doctor-patients")}>View plan</Button>
                       <Button size="sm" onClick={() => openUpdate(plan)}>Update</Button>
                     </div>
                   </div>

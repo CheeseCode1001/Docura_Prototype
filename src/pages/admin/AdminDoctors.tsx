@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
-import { Card, C, Badge, Avatar, Button, VerifiedBadge } from "@/components/ui";
+import { Card, C, Badge, Button, VerifiedBadge } from "@/components/ui";
 import { DOCTORS } from "@/data/mock";
 
 export default function AdminDoctors() {

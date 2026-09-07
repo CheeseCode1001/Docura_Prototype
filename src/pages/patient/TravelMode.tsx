@@ -22,7 +22,7 @@ export default function TravelMode() {
     { label: "Personal Doctor", value: personalDoc.name },
     { label: "Prescribing Doctor", value: `${prescribingDoc.name} · ${prescribingDoc.country}` },
     { label: "Active medications", value: "2 medications listed" },
-    { label: "Health Passport", value: "Ready to share" },
+    { label: "Medical Documents", value: "Ready to share" },
     { label: "Emergency card", value: "Ready" },
   ];
 
@@ -32,11 +32,11 @@ export default function TravelMode() {
         <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl" style={{ backgroundColor: C.amberLight }}>✈️</div>
         <div>
           <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Travel Mode</h2>
-          <p className="text-sm leading-relaxed max-w-xs" style={{ color: C.muted }}>Tell Docura when you travel so your care stays connected — your personal doctor, local prescribing support, and health passport ready wherever you go.</p>
+          <p className="text-sm leading-relaxed max-w-xs" style={{ color: C.muted }}>Tell Docura when you travel so your care stays connected — your personal doctor, local prescribing support, and medical documents ready wherever you go.</p>
         </div>
         <div className="w-full rounded-2xl p-5 text-left" style={{ backgroundColor: C.warm, border: `1px solid ${C.border}` }}>
           <p className="text-sm font-semibold mb-3" style={{ color: C.navy }}>When you activate travel mode, Docura prepares:</p>
-          {["Your Personal Doctor stays connected", "Local prescribing doctor support", "Active medications listed", "Health Passport ready", "Emergency card available"].map((item) => (
+          {["Your Personal Doctor stays connected", "Local prescribing doctor support", "Active medications listed", "Medical Documents ready", "Emergency card available"].map((item) => (
             <div key={item} className="flex items-center gap-2 mb-2">
               <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: C.amberLight }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -107,7 +107,7 @@ export default function TravelMode() {
               </div>
               <div className="border-t pt-4" style={{ borderColor: C.border }}>
                 <p className="text-sm font-semibold mb-3" style={{ color: C.navy }}>Docura will prepare:</p>
-                {[`${personalDoc.name} stays connected`, `Prescribing support in ${destination}`, "2 active medications", "Health Passport ready", "Emergency card activated"].map((item) => (
+                {[`${personalDoc.name} stays connected`, `Prescribing support in ${destination}`, "2 active medications", "Medical Documents ready", "Emergency card activated"].map((item) => (
                   <div key={item} className="flex items-center gap-2 mb-2">
                     <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: C.amberLight }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={C.amber} strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -154,7 +154,7 @@ export default function TravelMode() {
           ))}
         </Card>
         <div className="flex gap-3">
-          <Button fullWidth variant="outline" onClick={() => navigate("health-passport")}>View Health Passport</Button>
+          <Button fullWidth variant="outline" onClick={() => navigate("medical-documents")}>View Medical Documents</Button>
           <Button fullWidth variant="ghost" onClick={() => navigate("emergency-card")}>Emergency Card</Button>
         </div>
         <button onClick={() => setState("idle")} className="text-sm text-center py-2" style={{ color: C.muted }}>End travel mode</button>

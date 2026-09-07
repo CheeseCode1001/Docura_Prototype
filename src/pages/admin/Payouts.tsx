@@ -21,10 +21,10 @@ export default function AdminPayouts() {
   return (
     <AppShell role="admin" topBarTitle="Payouts">
       <div className="px-4 md:px-6 py-6 flex flex-col gap-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[["Requested", payouts.filter((p) => p.status === "requested").length, "amber"], ["Processing", payouts.filter((p) => p.status === "processing").length, "blue"], ["Paid this month", payouts.filter((p) => p.status === "paid").length, "green"]].map(([l, v, c]) => (
             <div key={l as string} className="rounded-xl border p-4 text-center" style={{ borderColor: C.border }}>
-              <p className="text-2xl font-bold" style={{ color: C.navy }}>{v as number}</p>
+              <p className="text-2xl font-bold" style={{ color: c === "amber" ? C.amber : c === "blue" ? C.blue : C.green }}>{v as number}</p>
               <p className="text-xs" style={{ color: C.muted }}>{l as string}</p>
             </div>
           ))}

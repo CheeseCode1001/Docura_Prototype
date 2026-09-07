@@ -1,7 +1,7 @@
 import { useApp } from "@/context/AppContext";
 import { C, DocuraLogo, Badge } from "@/components/ui";
 
-const ROLES = [
+const ROLES: { id: string; title: string; subtitle: string; icon: string; description: string; page: string; accountRole?: string; active: boolean; color: string }[] = [
   {
     id: "care",
     title: "Docura Care",
@@ -29,6 +29,7 @@ const ROLES = [
     icon: "👨‍👩‍👧",
     description: "Manage healthcare for a family member or loved one.",
     page: "signup",
+    accountRole: "proxy",
     active: true,
     color: "#9CA3AF",
   },
@@ -41,6 +42,17 @@ const ROLES = [
     page: "doctor-signup",
     active: true,
     color: "#0D1B3E",
+  },
+  {
+    id: "enterprise",
+    title: "Connected Care Partner",
+    subtitle: "For organisations and hospitals",
+    icon: "🏢",
+    description: "Coordinate employee or discharge follow-up care with Docura.",
+    page: "signup",
+    accountRole: "enterprise",
+    active: true,
+    color: C.navy,
   },
 ];
 
@@ -66,7 +78,7 @@ export default function RoleSelect() {
             {ROLES.map((role) => (
               <button
                 key={role.id}
-                onClick={() => navigate(role.page, role.id === "proxy" ? { accountRole: "proxy" } : {})}
+                onClick={() => navigate(role.page, role.accountRole ? { accountRole: role.accountRole } : {})}
                 disabled={!role.active}
                 className="p-6 rounded-2xl border text-left transition-all duration-200 group disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{
@@ -101,25 +113,6 @@ export default function RoleSelect() {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-export function ProxyWaitlist() {
-  const { navigate } = useApp();
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ backgroundColor: C.warm }}>
-      <div className="mb-6">
-        <DocuraLogo size={40} />
-      </div>
-      <Badge variant="gray">Coming Soon</Badge>
-      <h2 className="text-3xl font-bold mt-4 mb-3" style={{ fontFamily: "var(--font-display)", color: C.navy }}>Docura Proxy</h2>
-      <p className="max-w-sm mb-8" style={{ color: C.muted }}>We're building a way to help you care for a family member or loved one. Be the first to know when it launches.</p>
-      <div className="flex gap-3 w-full max-w-sm">
-        <input placeholder="Your email address" className="flex-1 rounded-full border px-4 py-2.5 text-sm outline-none" style={{ borderColor: C.border }} />
-        <button className="px-5 py-2.5 rounded-full text-sm font-semibold text-white" style={{ backgroundColor: C.amber }}>Notify me</button>
-      </div>
-      <button onClick={() => navigate("role-select")} className="mt-8 text-sm" style={{ color: C.muted }}>← Back</button>
     </div>
   );
 }

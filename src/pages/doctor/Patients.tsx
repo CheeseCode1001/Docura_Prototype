@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
 import { Card, Badge, Avatar, Tabs, Button, C, Modal } from "@/components/ui";
-import { DOCTOR_PATIENTS, PATIENT } from "@/data/mock";
+import { DOCTOR_PATIENTS } from "@/data/mock";
 
 function PatientDetail({ patient, onClose }: { patient: typeof DOCTOR_PATIENTS[0]; onClose: () => void }) {
   const [tab, setTab] = useState("Snapshot");

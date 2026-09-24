@@ -355,7 +355,7 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
   const [gender, setGender] = useState("Female");
 
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const isDoctor = view === "doctor-login" || view === "doctor-signup";
+  const isDoctor = accountRole === "doctor" || view === "doctor-login" || view === "doctor-signup";
 
   useEffect(() => {
     if (view !== "otp") return;
@@ -573,7 +573,14 @@ export default function AuthLayout({ initialView = "login" }: { initialView?: Au
                 />
               ))}
             </div>
-            <Btn loading={loading} onClick={() => fakeLoad(() => goTo("account-type"), 900)}>Verify code</Btn>
+            <Btn loading={loading} onClick={() => fakeLoad(() => {
+              if (isDoctor) {
+                setRole("doctor");
+                navigate("doctor-onboarding");
+              } else {
+                goTo("account-type");
+              }
+            }, 900)}>Verify code</Btn>
             <div className="text-center mt-4">
               {otpTimer > 0
                 ? <p className="text-sm" style={{ color: "#8892a4" }}>Resend code in <span className="font-semibold" style={{ color: C.navy }}>00:{String(otpTimer).padStart(2, "0")}</span></p>

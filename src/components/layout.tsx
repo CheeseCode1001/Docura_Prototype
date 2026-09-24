@@ -178,6 +178,7 @@ const DOCTOR_SIDEBAR_GROUPS: NavGroup[] = [
       { id: "follow-ups-care", label: "Follow-ups & Check-ins", page: "doctor-follow-ups", icon: <Icon d={I.clock} /> },
       { id: "alerts-care", label: "Patient Alerts", page: "doctor-patient-alerts", icon: <Icon d={I.alert} /> },
       { id: "rx-reviews", label: "Prescriptions / Rx Reviews", page: "prescription-reviews", icon: <Icon d={I.pill} /> },
+      { id: "prescribing-desk", label: "Prescribing Workspace", page: "prescribing-workspace", icon: <Icon d={I.shield} /> },
       { id: "labs", label: "Lab Orders & Results", page: "doctor-labs", icon: <Icon d={I.flask} /> },
       { id: "referrals", label: "Referrals", page: "doctor-referrals", icon: <Icon d={I.share} /> },
     ],
@@ -191,6 +192,7 @@ const DOCTOR_SIDEBAR_GROUPS: NavGroup[] = [
       { id: "grow-panel", label: "Grow My Panel", page: "doctor-grow-practice", icon: <Icon d={I.growth} /> },
       { id: "profile-mgmt", label: "Doctor Profile", page: "doctor-profile-mgmt", icon: <Icon d={I.user} /> },
       { id: "concerns", label: "Professional Concerns", page: "doctor-concerns", icon: <Icon d={I.shield} /> },
+      { id: "onboarding-link", label: "Doctor Onboarding", page: "doctor-onboarding", icon: <Icon d={I.check} /> },
     ],
   },
 ];

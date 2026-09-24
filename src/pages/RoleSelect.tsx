@@ -40,6 +40,7 @@ const ROLES: { id: string; title: string; subtitle: string; icon: string; descri
     icon: "👩‍⚕️",
     description: "Join Docura to build lasting relationships with patients across Nigeria and the UK.",
     page: "doctor-signup",
+    accountRole: "doctor",
     active: true,
     color: "#0D1B3E",
   },

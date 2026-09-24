@@ -3,7 +3,7 @@ import { api, seeds, storage, today, clockTime, uid } from "@/services/api";
 import type {
   AdminRole, AppNotification, CarePlan, Consultation, EnterpriseMember, EnterpriseProgram, FollowUp, Message,
   NotificationAudience, NotificationPreference, PermissionScope, Prescription, ProxyRelationship, Referral,
-  SupportTicket,
+  SupportTicket, PatientAlert, MonthlyCheckIn, LabOrder, LabCategory, PrescribingRequest, D2DMessage, ProfessionalConcern,
 } from "@/data/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,6 +30,14 @@ export interface DomainState {
   enterpriseMembers: EnterpriseMember[];
   enterprisePrograms: EnterpriseProgram[];
   enterpriseActivity: { id: string; text: string; time: string; type: "success" | "warn" | "info" }[];
+  patientAlerts: PatientAlert[];
+  monthlyCheckIns: MonthlyCheckIn[];
+  labOrders: LabOrder[];
+  prescribingRequests: PrescribingRequest[];
+  d2dMessages: D2DMessage[];
+  professionalConcerns: ProfessionalConcern[];
+  lockedConsultations: Record<string, { note: string; lockedAt: string; addenda: { id: string; text: string; createdAt: string; doctorName: string }[] }>;
+  activeWorkspaceRole: "personal" | "prescribing";
 }
 
 const DOMAIN_KEY = "docura-domain-state";
@@ -61,6 +69,14 @@ function initialDomain(): DomainState {
     enterpriseMembers: [],
     enterprisePrograms: [],
     enterpriseActivity: [],
+    patientAlerts: seeds.patientAlerts(),
+    monthlyCheckIns: seeds.monthlyCheckIns(),
+    labOrders: seeds.labOrders(),
+    prescribingRequests: seeds.prescribingRequests(),
+    d2dMessages: seeds.d2dMessages(),
+    professionalConcerns: seeds.professionalConcerns(),
+    lockedConsultations: {},
+    activeWorkspaceRole: "personal",
   };
 }
 
@@ -130,6 +146,26 @@ interface AppContextType {
   // Enterprise
   inviteEnterpriseMember: (email: string) => void;
   createEnterpriseProgram: () => void;
+  // Proactive Patient Alerts
+  resolvePatientAlert: (id: string) => void;
+  snoozePatientAlert: (id: string, days?: number) => void;
+  // Monthly Check-ins
+  sendMonthlyCheckIn: (id: string, customMessage?: string) => void;
+  // Lab Orders
+  orderLabTest: (input: { patientId: string; patientName: string; category: LabCategory; testName: string; clinicalIndication: string; urgency: "routine" | "urgent" }) => void;
+  reviewLabOrder: (id: string, clinicalNote: string) => void;
+  // Cross-Border Prescribing Workspace
+  approvePrescriptionRequest: (id: string, independentClinicalNote: string) => void;
+  declinePrescriptionRequest: (id: string, declineReason: string) => void;
+  escalatePrescriptionRequest: (id: string) => void;
+  sendD2DMessage: (input: { threadType: "patient-clinical" | "general"; patientId?: string; patientName?: string; recipientDoctorId: string; recipientDoctorName: string; text: string; isUrgent?: boolean }) => void;
+  // Professional Concerns
+  respondProfessionalConcern: (id: string, response: string) => void;
+  // Consultation Care Episode
+  lockConsultationNote: (consultationId: string, note: string) => void;
+  addConsultationAddendum: (consultationId: string, text: string) => void;
+  // Workspace Switcher
+  setActiveWorkspaceRole: (role: "personal" | "prescribing") => void;
   // Toasts
   toasts: Toast[];
   addToast: (type: Toast["type"], message: string) => void;
@@ -552,6 +588,234 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, [updateDomain]);
 
+  // ─── Proactive Patient Alerts ──────────────────────────────────────────────
+  const resolvePatientAlert = useCallback((id: string) => {
+    updateDomain((current) => ({
+      ...current,
+      patientAlerts: current.patientAlerts.map((a) => (a.id === id ? { ...a, status: "resolved" } : a)),
+    }));
+  }, [updateDomain]);
+
+  const snoozePatientAlert = useCallback((id: string, days = 1) => {
+    const until = new Date(Date.now() + days * 86400000).toLocaleDateString("en-GB");
+    updateDomain((current) => ({
+      ...current,
+      patientAlerts: current.patientAlerts.map((a) => (a.id === id ? { ...a, status: "snoozed", snoozedUntil: until } : a)),
+    }));
+  }, [updateDomain]);
+
+  // ─── Monthly Check-ins ─────────────────────────────────────────────────────
+  const sendMonthlyCheckIn = useCallback((id: string, customMessage?: string) => {
+    updateDomain((current) => {
+      const checkIn = current.monthlyCheckIns.find((c) => c.id === id);
+      if (!checkIn) return current;
+      const text = customMessage || `Hi ${checkIn.patientName}, this is your monthly chronic care check-in from Dr. Amara Osei. How have your symptoms and readings been over the past month?`;
+      const newMsg: Message = {
+        id: uid("m"),
+        senderId: "d1",
+        senderName: "Dr. Amara Osei",
+        text,
+        time: clockTime(),
+        date: today(),
+        status: "delivered",
+        isDoctor: true,
+      };
+      return {
+        ...current,
+        messages: [...current.messages, newMsg],
+        monthlyCheckIns: current.monthlyCheckIns.map((c) => (c.id === id ? { ...c, status: "pending", lastResponse: "Sent today" } : c)),
+        notifications: notify(current, {
+          audience: "patient",
+          type: "message",
+          title: "Monthly Check-in from Dr. Amara",
+          body: text,
+          page: "patient-chat",
+        }),
+      };
+    });
+  }, [updateDomain]);
+
+  // ─── Lab Orders ────────────────────────────────────────────────────────────
+  const orderLabTest = useCallback((input: { patientId: string; patientName: string; category: LabCategory; testName: string; clinicalIndication: string; urgency: "routine" | "urgent" }) => {
+    updateDomain((current) => {
+      const newOrder: LabOrder = {
+        id: uid("lab"),
+        patientId: input.patientId,
+        patientName: input.patientName,
+        doctorId: "d1",
+        doctorName: "Dr. Amara Osei",
+        category: input.category,
+        testName: input.testName,
+        clinicalIndication: input.clinicalIndication,
+        urgency: input.urgency,
+        orderedDate: today(),
+        status: "pending",
+      };
+      return {
+        ...current,
+        labOrders: [newOrder, ...current.labOrders],
+        notifications: notify(current, {
+          audience: "patient",
+          type: "system",
+          title: "New Lab Order Issued",
+          body: `Dr. Amara ordered ${input.testName} (${input.urgency}).`,
+          page: "medical-documents",
+        }),
+      };
+    });
+  }, [updateDomain]);
+
+  const reviewLabOrder = useCallback((id: string, clinicalNote: string) => {
+    updateDomain((current) => ({
+      ...current,
+      labOrders: current.labOrders.map((o) => (o.id === id ? { ...o, status: "reviewed", clinicalNote, reviewedAt: today() } : o)),
+    }));
+  }, [updateDomain]);
+
+  // ─── Cross-Border Prescribing Workspace ─────────────────────────────────────
+  const approvePrescriptionRequest = useCallback((id: string, independentClinicalNote: string) => {
+    updateDomain((current) => {
+      const req = current.prescribingRequests.find((r) => r.id === id);
+      if (!req) return current;
+      const rxId = uid("rx-local");
+      const newPrescription: Prescription = {
+        id: rxId,
+        consultationId: "crossborder-" + req.id,
+        doctorId: "d1",
+        doctorName: "Dr. Amara Osei (Local Prescribing Doctor)",
+        personalDoctorName: req.personalDoctorName,
+        date: today(),
+        status: "active",
+        medication: req.medication,
+        dosage: req.dosage,
+        frequency: req.frequency,
+        duration: req.duration,
+        instructions: `Authorized locally in Nigeria following clinical review of recommendation from ${req.personalDoctorName}.`,
+        crossBorder: true,
+      };
+      return {
+        ...current,
+        prescriptions: [newPrescription, ...current.prescriptions],
+        prescribingRequests: current.prescribingRequests.map((r) => (r.id === id ? {
+          ...r,
+          status: "approved-issued",
+          independentClinicalNote,
+          issuedPrescriptionId: rxId,
+        } : r)),
+        notifications: notify(current, {
+          audience: "patient",
+          type: "prescription",
+          title: "Prescription issued",
+          body: `Your prescription for ${req.medication} has been reviewed and authorized for local dispensing.`,
+          page: "patient-prescriptions",
+        }),
+      };
+    });
+  }, [updateDomain]);
+
+  const declinePrescriptionRequest = useCallback((id: string, declineReason: string) => {
+    updateDomain((current) => ({
+      ...current,
+      prescribingRequests: current.prescribingRequests.map((r) => (r.id === id ? {
+        ...r,
+        status: "declined",
+        declineReason,
+      } : r)),
+    }));
+  }, [updateDomain]);
+
+  const escalatePrescriptionRequest = useCallback((id: string) => {
+    updateDomain((current) => ({
+      ...current,
+      prescribingRequests: current.prescribingRequests.map((r) => (r.id === id ? {
+        ...r,
+        status: "auto-escalated",
+        escalatedTo: "Dr. Fatima Bello (MDCN Local Prescribing Network)",
+      } : r)),
+    }));
+  }, [updateDomain]);
+
+  const sendD2DMessage = useCallback((input: { threadType: "patient-clinical" | "general"; patientId?: string; patientName?: string; recipientDoctorId: string; recipientDoctorName: string; text: string; isUrgent?: boolean }) => {
+    updateDomain((current) => {
+      const msg: D2DMessage = {
+        id: uid("d2d"),
+        threadType: input.threadType,
+        patientId: input.patientId,
+        patientName: input.patientName,
+        senderDoctorId: "d1",
+        senderDoctorName: "Dr. Amara Osei",
+        recipientDoctorId: input.recipientDoctorId,
+        recipientDoctorName: input.recipientDoctorName,
+        text: input.text,
+        sentAt: `${today()} ${clockTime()}`,
+        isUrgent: input.isUrgent,
+      };
+      return {
+        ...current,
+        d2dMessages: [...current.d2dMessages, msg],
+      };
+    });
+  }, [updateDomain]);
+
+  // ─── Professional Concerns ──────────────────────────────────────────────────
+  const respondProfessionalConcern = useCallback((id: string, response: string) => {
+    updateDomain((current) => ({
+      ...current,
+      professionalConcerns: current.professionalConcerns.map((c) => (c.id === id ? {
+        ...c,
+        status: "response-submitted",
+        doctorResponse: response,
+        submittedAt: `${today()} ${clockTime()}`,
+        auditTrail: [...c.auditTrail, { date: `${today()} ${clockTime()}`, action: "Response submitted by Doctor", actor: "Dr. Amara Osei" }],
+      } : c)),
+    }));
+  }, [updateDomain]);
+
+  // ─── Consultation Care Episode Note Locking ─────────────────────────────────
+  const lockConsultationNote = useCallback((consultationId: string, note: string) => {
+    updateDomain((current) => ({
+      ...current,
+      lockedConsultations: {
+        ...current.lockedConsultations,
+        [consultationId]: {
+          note,
+          lockedAt: `${today()} ${clockTime()}`,
+          addenda: [],
+        },
+      },
+    }));
+  }, [updateDomain]);
+
+  const addConsultationAddendum = useCallback((consultationId: string, text: string) => {
+    updateDomain((current) => {
+      const existing = current.lockedConsultations[consultationId];
+      if (!existing) return current;
+      const newAddendum = {
+        id: uid("addendum"),
+        text,
+        createdAt: `${today()} ${clockTime()}`,
+        doctorName: "Dr. Amara Osei",
+      };
+      return {
+        ...current,
+        lockedConsultations: {
+          ...current.lockedConsultations,
+          [consultationId]: {
+            ...existing,
+            addenda: [...existing.addenda, newAddendum],
+          },
+        },
+      };
+    });
+  }, [updateDomain]);
+
+  const setActiveWorkspaceRole = useCallback((newRole: "personal" | "prescribing") => {
+    updateDomain((current) => ({
+      ...current,
+      activeWorkspaceRole: newRole,
+    }));
+  }, [updateDomain]);
+
   // ─── Toasts ────────────────────────────────────────────────────────────────
   const addToast = useCallback((type: Toast["type"], message: string) => {
     const id = Math.random().toString(36).slice(2);
@@ -575,6 +839,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleSavedContent,
       addNotification, markNotificationRead, markAllNotificationsRead, setNotificationChannel, unreadCount,
       inviteEnterpriseMember, createEnterpriseProgram,
+      resolvePatientAlert, snoozePatientAlert,
+      sendMonthlyCheckIn,
+      orderLabTest, reviewLabOrder,
+      approvePrescriptionRequest, declinePrescriptionRequest, escalatePrescriptionRequest, sendD2DMessage,
+      respondProfessionalConcern,
+      lockConsultationNote, addConsultationAddendum,
+      setActiveWorkspaceRole,
       toasts, addToast, removeToast,
     }}>
       {children}
@@ -587,3 +858,4 @@ export function useApp() {
   if (!ctx) throw new Error("useApp must be used within AppProvider");
   return ctx;
 }
+

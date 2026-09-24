@@ -437,3 +437,161 @@ export interface EnterpriseProgram {
   enrolled: number;
   color: string;
 }
+
+// ─── Proactive Patient Alerts ────────────────────────────────────────────────
+export type AlertCategory =
+  | "at-risk"
+  | "needs-attention"
+  | "due-checkin"
+  | "silent"
+  | "abnormal-result"
+  | "care-plan-overdue"
+  | "followup-missed";
+
+export interface PatientAlert {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientPhoto?: string;
+  category: AlertCategory;
+  severity: "critical" | "high" | "medium" | "low";
+  why: string;
+  lastActivity: string;
+  recommendedAction: string;
+  createdAt: string;
+  status: "active" | "snoozed" | "resolved";
+  snoozedUntil?: string;
+}
+
+// ─── Monthly Check-ins ───────────────────────────────────────────────────────
+export interface MonthlyCheckIn {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientPhoto?: string;
+  condition: string;
+  nextDue: string;
+  lastResponse: string;
+  status: "due" | "overdue" | "responded" | "pending";
+  templateKey: string;
+  customNote?: string;
+  frequency: "monthly" | "bi-monthly" | "quarterly";
+}
+
+// ─── Lab Orders & Results ────────────────────────────────────────────────────
+export type LabCategory = "blood" | "urine" | "heart" | "imaging" | "microbiology";
+export type LabStatus = "pending" | "received" | "needs-review" | "reviewed";
+
+export interface LabResultItem {
+  parameter: string;
+  value: string;
+  unit: string;
+  referenceRange: string;
+  status: "normal" | "high" | "low" | "critical";
+}
+
+export interface LabOrder {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientPhoto?: string;
+  doctorId: string;
+  doctorName: string;
+  category: LabCategory;
+  testName: string;
+  clinicalIndication: string;
+  urgency: "routine" | "urgent";
+  orderedDate: string;
+  status: LabStatus;
+  isAbnormal?: boolean;
+  abnormalDetails?: string;
+  results?: LabResultItem[];
+  reviewedAt?: string;
+  clinicalNote?: string;
+}
+
+// ─── Cross-Border & Prescribing Doctor ───────────────────────────────────────
+export type PrescribingStatus =
+  | "draft"
+  | "recommendation-created"
+  | "awaiting-local-review"
+  | "under-review"
+  | "approved-issued"
+  | "discussion-required"
+  | "declined"
+  | "auto-escalated";
+
+export interface PrescribingRequest {
+  id: string;
+  patientId: string;
+  patientName: string;
+  patientAge: number;
+  patientPhoto?: string;
+  patientCountry: Country;
+  personalDoctorId: string;
+  personalDoctorName: string;
+  prescribingDoctorId?: string;
+  prescribingDoctorName?: string;
+  medication: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  clinicalReasoning: string;
+  conditions: string[];
+  allergies: string[];
+  currentMedications: string[];
+  recentVitals: {
+    bp: string;
+    pulse: string;
+    bloodSugar?: string;
+    temp?: string;
+    date: string;
+  };
+  submittedAt: string;
+  slaDeadline: string;
+  isUrgent: boolean;
+  status: PrescribingStatus;
+  declineReason?: string;
+  independentClinicalNote?: string;
+  issuedPrescriptionId?: string;
+  escalatedTo?: string;
+}
+
+// ─── Doctor-to-Doctor Messaging ──────────────────────────────────────────────
+export interface D2DMessage {
+  id: string;
+  threadType: "patient-clinical" | "general";
+  patientId?: string;
+  patientName?: string;
+  senderDoctorId: string;
+  senderDoctorName: string;
+  recipientDoctorId: string;
+  recipientDoctorName: string;
+  text: string;
+  sentAt: string;
+  isUrgent?: boolean;
+}
+
+// ─── Professional Concerns & Complaints ──────────────────────────────────────
+export interface ProfessionalConcern {
+  id: string;
+  caseReference: string;
+  patientReference?: string;
+  dateReceived: string;
+  issueTitle: string;
+  issueDescription: string;
+  responseDeadline: string;
+  status: "under-review" | "awaiting-response" | "response-submitted" | "resolved";
+  doctorResponse?: string;
+  submittedAt?: string;
+  auditTrail: { date: string; action: string; actor: string }[];
+}
+
+// ─── Grow My Practice ────────────────────────────────────────────────────────
+export interface PracticeGrowthMetrics {
+  profileViews: number;
+  newInquiries: number;
+  subscriptionConversions: number;
+  referralCode: string;
+  shareUrl: string;
+}

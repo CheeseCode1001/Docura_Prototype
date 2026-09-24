@@ -70,6 +70,11 @@ import CareWorkspace from "@/pages/doctor/CareWorkspace";
 import DoctorCarePlans from "@/pages/doctor/DoctorCarePlans";
 import DoctorFollowUps from "@/pages/doctor/DoctorFollowUps";
 import { DoctorAnalytics, DoctorReferrals, DoctorAvailability } from "@/pages/doctor/Practice";
+import PatientAlerts from "@/pages/doctor/PatientAlerts";
+import LabOrders from "@/pages/doctor/LabOrders";
+import GrowPractice from "@/pages/doctor/GrowPractice";
+import PrescribingWorkspace from "@/pages/doctor/PrescribingWorkspace";
+import ProfessionalConcerns from "@/pages/doctor/ProfessionalConcerns";
 
 // Admin pages
 import AdminDashboard from "@/pages/admin/Dashboard";
@@ -257,6 +262,11 @@ function Router() {
     case "doctor-analytics": return <DoctorAnalytics />;
     case "doctor-referrals": return <DoctorReferrals />;
     case "doctor-availability": return <DoctorAvailability />;
+    case "doctor-patient-alerts": return <PatientAlerts />;
+    case "doctor-labs": return <LabOrders />;
+    case "doctor-grow-practice": return <GrowPractice />;
+    case "prescribing-workspace": return <PrescribingWorkspace />;
+    case "doctor-concerns": return <ProfessionalConcerns />;
 
     // Admin app
     case "admin-dashboard": return <AdminDashboard />;

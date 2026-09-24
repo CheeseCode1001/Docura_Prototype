@@ -54,6 +54,9 @@ const I = {
   alert: ["M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z", "M12 9v4", "M12 17h.01"],
   settings: ["M12 15a3 3 0 100-6 3 3 0 000 6z", "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"],
   calendar: ["M8 2v4M16 2v4M3 10h18", "M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"],
+  flask: "M10 2v7.31L4.1 19.1A2 2 0 005.74 22h12.52a2 2 0 001.64-2.9L14 9.31V2M8 2h8M7 16h10",
+  growth: "M23 6l-9.5 9.5-5-5L1 18M17 6h6v6",
+  prescribing: ["M12 2a10 10 0 100 20 10 10 0 000-20z", "M12 6v12", "M6 12h12"],
 };
 
 // ─── Patient ──────────────────────────────────────────────────────────────────
@@ -147,47 +150,47 @@ const PROXY_SIDEBAR_GROUPS: NavGroup[] = [
 // ─── Doctor ───────────────────────────────────────────────────────────────────
 const DOCTOR_NAV: NavItem[] = [
   { id: "home", label: "Home", page: "doctor-dashboard", icon: <Icon d={I.home} /> },
+  { id: "alerts", label: "Alerts", page: "doctor-patient-alerts", icon: <Icon d={I.alert} /> },
   { id: "patients", label: "Patients", page: "doctor-patients", icon: <Icon d={I.users} /> },
   { id: "messages", label: "Messages", page: "doctor-chat", icon: <Icon d={I.chat} /> },
   { id: "earnings", label: "Earnings", page: "doctor-earnings", icon: <Icon d={I.money} /> },
-  { id: "profile", label: "Profile", page: "doctor-profile-mgmt", icon: <Icon d={I.user} /> },
 ];
 
 const DOCTOR_SIDEBAR_GROUPS: NavGroup[] = [
   {
-    label: "Main",
+    label: "Home",
     items: [
-      { id: "home", label: "Dashboard", page: "doctor-dashboard", icon: <Icon d={I.home} /> },
+      { id: "dashboard", label: "Earnings & Overview", page: "doctor-dashboard", icon: <Icon d={I.home} /> },
+      { id: "alerts", label: "Urgent / Patient Alerts", page: "doctor-patient-alerts", icon: <Icon d={I.alert} /> },
       { id: "workspace", label: "Today's Care", page: "doctor-workspace", icon: <Icon d={I.clipboard} /> },
-      { id: "patients", label: "Patients", page: "doctor-patients", icon: <Icon d={I.users} /> },
-      { id: "consultations", label: "Consultations", page: "doctor-consultations", icon: <Icon d={I.list} /> },
-      { id: "messages", label: "Messages", page: "doctor-chat", icon: <Icon d={I.chat} /> },
+      { id: "follow-ups", label: "Follow-ups & Check-ins", page: "doctor-follow-ups", icon: <Icon d={I.list} /> },
+      { id: "care-plans", label: "Active Care Plans", page: "doctor-care-plans", icon: <Icon d={I.clipboard} /> },
+      { id: "analytics", label: "Practice Pulse", page: "doctor-analytics", icon: <Icon d={I.pulse} /> },
     ],
   },
   {
-    label: "Clinical",
+    label: "Care",
     items: [
-      { id: "care-plans", label: "Care Plans", page: "doctor-care-plans", icon: <Icon d={I.clipboard} /> },
-      { id: "follow-ups", label: "Follow-ups", page: "doctor-follow-ups", icon: <Icon d={I.list} /> },
-      { id: "rx-reviews", label: "Rx Reviews", page: "prescription-reviews", icon: <Icon d={I.doc} /> },
+      { id: "patients", label: "Patients", page: "doctor-patients", icon: <Icon d={I.users} /> },
+      { id: "consultations", label: "Consultations", page: "doctor-consultations", icon: <Icon d={I.list} /> },
+      { id: "messages", label: "Messages", page: "doctor-chat", icon: <Icon d={I.chat} /> },
+      { id: "care-plans-care", label: "Care Plans", page: "doctor-care-plans", icon: <Icon d={I.clipboard} /> },
+      { id: "follow-ups-care", label: "Follow-ups & Check-ins", page: "doctor-follow-ups", icon: <Icon d={I.clock} /> },
+      { id: "alerts-care", label: "Patient Alerts", page: "doctor-patient-alerts", icon: <Icon d={I.alert} /> },
+      { id: "rx-reviews", label: "Prescriptions / Rx Reviews", page: "prescription-reviews", icon: <Icon d={I.pill} /> },
+      { id: "labs", label: "Lab Orders & Results", page: "doctor-labs", icon: <Icon d={I.flask} /> },
       { id: "referrals", label: "Referrals", page: "doctor-referrals", icon: <Icon d={I.share} /> },
     ],
   },
   {
     label: "Practice",
     items: [
+      { id: "earnings-practice", label: "Earnings & Payouts", page: "doctor-earnings", icon: <Icon d={I.money} /> },
+      { id: "analytics-practice", label: "Practice Analytics", page: "doctor-analytics", icon: <Icon d={I.pulse} /> },
       { id: "availability", label: "Availability", page: "doctor-availability", icon: <Icon d={I.calendar} /> },
-      { id: "analytics", label: "Analytics", page: "doctor-analytics", icon: <Icon d={I.pulse} /> },
-      { id: "earnings", label: "Earnings", page: "doctor-earnings", icon: <Icon d={I.money} /> },
-    ],
-  },
-  {
-    label: "Account",
-    items: [
-      { id: "verification", label: "Verification", page: "doctor-verification", icon: <Icon d={I.check} /> },
-      { id: "profile-mgmt", label: "My Profile", page: "doctor-profile-mgmt", icon: <Icon d={I.user} /> },
-      { id: "support", label: "Support", page: "support-center", icon: <Icon d={I.life} /> },
-      { id: "settings", label: "Settings", page: "doctor-settings", icon: <Icon d={I.settings} /> },
+      { id: "grow-panel", label: "Grow My Panel", page: "doctor-grow-practice", icon: <Icon d={I.growth} /> },
+      { id: "profile-mgmt", label: "Doctor Profile", page: "doctor-profile-mgmt", icon: <Icon d={I.user} /> },
+      { id: "concerns", label: "Professional Concerns", page: "doctor-concerns", icon: <Icon d={I.shield} /> },
     ],
   },
 ];
@@ -311,9 +314,13 @@ function filterGroups(groups: NavGroup[], role: UserRole, adminRole: AdminRole):
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 export function Sidebar({ role, mobileOpen, onClose }: { role: UserRole; mobileOpen: boolean; onClose: () => void }) {
-  const { page, navigate, signOut, adminRole } = useApp();
+  const { page, navigate, signOut, adminRole, domain, setActiveWorkspaceRole } = useApp();
   const patient = api.patient();
   const groups = filterGroups(groupsFor(role), role, adminRole);
+
+  const activeAlertsCount = domain.patientAlerts.filter((a) => a.status === "active").length;
+  const pendingPrescriptionsCount = domain.prescribingRequests.filter((r) => r.status === "awaiting-local-review" || r.status === "under-review").length;
+  const isPrescribingPage = page === "prescribing-workspace";
 
   return (
     <>
@@ -322,7 +329,7 @@ export function Sidebar({ role, mobileOpen, onClose }: { role: UserRole; mobileO
         className={`flex flex-col w-64 h-screen fixed lg:sticky top-0 left-0 z-50 border-r shrink-0 overflow-hidden transition-transform duration-200 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ borderColor: C.border, backgroundColor: "white" }}
       >
-        <div className="p-6 border-b shrink-0 flex items-center justify-between" style={{ borderColor: C.border }}>
+        <div className="p-5 border-b shrink-0 flex items-center justify-between" style={{ borderColor: C.border }}>
           <button onClick={() => { navigate(role ? `${role}-dashboard` : "landing"); onClose(); }} aria-label="Docura home">
             <DocuraLogo size={36} showText />
           </button>
@@ -331,6 +338,45 @@ export function Sidebar({ role, mobileOpen, onClose }: { role: UserRole; mobileO
           </button>
         </div>
 
+        {role === "doctor" && (
+          <div className="p-3 border-b shrink-0 bg-slate-50/70" style={{ borderColor: C.border }}>
+            <p className="text-[10px] font-bold uppercase tracking-wider mb-2 px-1" style={{ color: C.muted }}>Clinical Workspace Mode</p>
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-white border" style={{ borderColor: C.border }}>
+              <button
+                onClick={() => {
+                  setActiveWorkspaceRole("personal");
+                  navigate("doctor-dashboard");
+                  onClose();
+                }}
+                className="py-1.5 px-2 rounded-lg text-xs font-semibold text-center transition-all truncate"
+                style={{
+                  backgroundColor: !isPrescribingPage ? C.navy : "transparent",
+                  color: !isPrescribingPage ? "white" : C.muted,
+                }}
+              >
+                Personal Doctor
+              </button>
+              <button
+                onClick={() => {
+                  setActiveWorkspaceRole("prescribing");
+                  navigate("prescribing-workspace");
+                  onClose();
+                }}
+                className="py-1.5 px-2 rounded-lg text-xs font-semibold text-center transition-all relative flex items-center justify-center gap-1"
+                style={{
+                  backgroundColor: isPrescribingPage ? C.navy : "transparent",
+                  color: isPrescribingPage ? "white" : C.muted,
+                }}
+              >
+                <span className="truncate">Prescribing</span>
+                {pendingPrescriptionsCount > 0 && (
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: C.coral }} />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
         <nav className="flex-1 px-3 py-4 flex flex-col gap-5 overflow-y-auto scrollbar-none">
           {groups.map((group) => (
             <div key={group.label}>
@@ -338,15 +384,29 @@ export function Sidebar({ role, mobileOpen, onClose }: { role: UserRole; mobileO
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
                   const active = page === item.page;
+                  const isAlert = item.page === "doctor-patient-alerts";
+                  const isRx = item.page === "prescription-reviews";
                   return (
                     <button
                       key={item.id}
                       onClick={() => { navigate(item.page, item.params || {}); onClose(); }}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left w-full"
+                      className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left w-full justify-between"
                       style={{ backgroundColor: active ? "#E6F1EE" : "transparent", color: active ? C.navy : C.muted, fontFamily: "var(--font-body)" }}
                     >
-                      {item.icon}
-                      <span className="truncate">{item.label}</span>
+                      <div className="flex items-center gap-3 truncate">
+                        {item.icon}
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {isAlert && activeAlertsCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: C.coral }}>
+                          {activeAlertsCount}
+                        </span>
+                      )}
+                      {isRx && pendingPrescriptionsCount > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold text-white shrink-0" style={{ backgroundColor: C.amber }}>
+                          {pendingPrescriptionsCount}
+                        </span>
+                      )}
                     </button>
                   );
                 })}

@@ -42,6 +42,13 @@ export const api = {
   tvItem: (id: string): TvContent | undefined => seed.TV_CONTENT.find((c) => c.id === id),
   doctorAnalytics: () => seed.DOCTOR_ANALYTICS,
   platformAnalytics: () => seed.PLATFORM_ANALYTICS,
+  patientAlerts: () => seed.PATIENT_ALERTS,
+  monthlyCheckIns: () => seed.MONTHLY_CHECK_INS,
+  labOrders: () => seed.LAB_ORDERS,
+  prescribingRequests: () => seed.PRESCRIBING_REQUESTS,
+  d2dMessages: () => seed.D2D_MESSAGES,
+  professionalConcerns: () => seed.PROFESSIONAL_CONCERNS,
+  practiceGrowth: () => seed.PRACTICE_GROWTH,
 };
 
 // ─── Seeds for mutable state (hydrated into AppContext) ──────────────────────
@@ -53,6 +60,12 @@ export const seeds = {
   referrals: (): Referral[] => seed.REFERRALS,
   supportTickets: (): SupportTicket[] => seed.SUPPORT_TICKETS,
   proxyRelationships: (): ProxyRelationship[] => seed.PROXY_RELATIONSHIPS,
+  patientAlerts: () => seed.PATIENT_ALERTS,
+  monthlyCheckIns: () => seed.MONTHLY_CHECK_INS,
+  labOrders: () => seed.LAB_ORDERS,
+  prescribingRequests: () => seed.PRESCRIBING_REQUESTS,
+  d2dMessages: () => seed.D2D_MESSAGES,
+  professionalConcerns: () => seed.PROFESSIONAL_CONCERNS,
 };
 
 // ─── Persistence ─────────────────────────────────────────────────────────────

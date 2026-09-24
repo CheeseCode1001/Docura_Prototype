@@ -118,6 +118,11 @@ export const ROUTES: Record<string, RouteDefinition> = {
   "doctor-analytics": { roles: ["doctor"] },
   "doctor-referrals": { roles: ["doctor"] },
   "doctor-availability": { roles: ["doctor"] },
+  "doctor-patient-alerts": { roles: ["doctor"] },
+  "doctor-labs": { roles: ["doctor"] },
+  "doctor-grow-practice": { roles: ["doctor"] },
+  "prescribing-workspace": { roles: ["doctor"] },
+  "doctor-concerns": { roles: ["doctor"] },
 
   // ── Enterprise / hospital partner ──────────────────────────────────────────
   "enterprise-dashboard": { roles: ["enterprise"] },

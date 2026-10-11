@@ -5,10 +5,10 @@ import { SiteFooter } from "@/pages/PublicPage";
 import logo from "@/assets/logo.png";
 
 const LANDING_NAV = [
-  { label: "How it works", page: "public-how-it-works" },
+  { label: "Cross-border care", page: "cross-border-care" },
   { label: "Docura Care", page: "public-care" },
   { label: "Docura Now", page: "public-now" },
-  { label: "Global care", page: "public-crossborder" },
+  { label: "How it works", page: "public-how-it-works" },
   { label: "Docura TV", page: "tv-home" },
   { label: "For Doctors", page: "public-doctors" },
 ];
@@ -220,51 +220,58 @@ export default function Landing() {
               className="flex flex-col justify-center px-8 md:px-16 lg:px-20 py-16 md:py-20 order-2 md:order-1"
               style={{ backgroundColor: C.navy }}
             >
-              <div style={{ maxWidth: 480 }}>
-                <p
-                  className="text-xs font-semibold uppercase mb-7"
-                  style={{ color: C.amber, letterSpacing: "0.16em" }}
-                >
-                  Docura · Your healthcare home
-                </p>
+              <div style={{ maxWidth: 500 }}>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider mb-5 bg-white/10 text-amber-300 border border-amber-400/30">
+                  <span>🇳🇬 Nigeria</span>
+                  <span>↔</span>
+                  <span>🇬🇧 United Kingdom</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  <span>MDCN & GMC Verified</span>
+                </div>
                 <h1
-                  className="mb-6 leading-none"
+                  className="mb-5 leading-none"
                   style={{
                     fontFamily: "var(--font-display)",
-                    fontSize: "clamp(2.6rem, 5vw, 4.4rem)",
+                    fontSize: "clamp(2.3rem, 4.6vw, 4.1rem)",
                     color: C.amber,
                     fontWeight: 700,
-                    lineHeight: 1.06,
+                    lineHeight: 1.08,
                   }}
                 >
-                  Your healthcare,<br />
-                  <em style={{ fontStyle: "italic", color: C.amber }}>wherever</em><br />
-                  life takes you.
+                  Your doctor relationship doesn't have to stop at the border.
                 </h1>
                 <p
-                  className="mb-10 leading-relaxed"
-                  style={{ color: "rgba(255,255,255,0.68)", fontSize: "1.05rem", maxWidth: 400 }}
+                  className="mb-8 leading-relaxed"
+                  style={{ color: "rgba(255,255,255,0.78)", fontSize: "1.05rem", maxWidth: 440 }}
                 >
-                  Get trusted medical care when you need it, with a doctor who can continue caring for you over time.
+                  Stay connected to your healthcare history and Personal Doctor while navigating care across Nigeria and the UK. Docura helps coordinate your ongoing care with locally licensed doctors when needed.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-3 mb-7">
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
                   <button
-                    onClick={() => startFlow("docura-now-flow")}
-                    className="px-7 py-4 text-sm font-semibold rounded-full transition-opacity hover:opacity-88"
+                    onClick={() => navigate("cross-border-care")}
+                    className="px-7 py-4 text-sm font-semibold rounded-full transition-opacity hover:opacity-88 text-center shadow-xs"
                     style={{ backgroundColor: C.amber, color: "white" }}
                   >
-                    Talk to a Doctor
+                    Explore Cross-Border Care
                   </button>
                   <button
                     onClick={() => startFlow("find-doctor")}
-                    className="px-7 py-4 text-sm font-semibold rounded-xl border transition-colors hover:bg-white/10"
+                    className="px-7 py-4 text-sm font-semibold rounded-full border transition-colors hover:bg-white/10 text-center"
                     style={{ borderColor: "rgba(255,255,255,0.35)", color: "white" }}
                   >
-                    Find Your Personal Doctor
+                    Find a Doctor
                   </button>
                 </div>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.48)" }}>
-                  Verified doctors · Secure care · Continuity wherever you go
+                <div className="mb-4">
+                  <button
+                    onClick={() => startFlow("docura-now-flow")}
+                    className="text-xs text-white/75 hover:text-white underline underline-offset-4 transition-colors"
+                  >
+                    Need care today? Talk to a Doctor now →
+                  </button>
+                </div>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  Verified doctors · Continuous record · Statutory local prescribing compliance
                 </p>
               </div>
             </div>
@@ -805,13 +812,20 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="text-center">
+          <div className="text-center flex flex-wrap justify-center gap-4">
             <button
-              onClick={() => navigate("role-select")}
-              className="px-7 py-3.5 text-sm font-semibold rounded-full border transition-colors hover:bg-gray-50"
+              onClick={() => navigate("cross-border-care")}
+              className="px-8 py-4 text-sm font-semibold rounded-full transition-opacity hover:opacity-88 shadow-xs"
+              style={{ backgroundColor: C.navy, color: "white" }}
+            >
+              Explore Full Cross-Border Care Model →
+            </button>
+            <button
+              onClick={() => startFlow("find-doctor")}
+              className="px-7 py-4 text-sm font-semibold rounded-full border transition-colors hover:bg-gray-50"
               style={{ borderColor: C.navy, color: C.navy }}
             >
-              Explore Global Care
+              Find a Doctor in Nigeria or UK
             </button>
           </div>
         </div>

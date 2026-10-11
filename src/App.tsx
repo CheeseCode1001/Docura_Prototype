@@ -1,12 +1,14 @@
 import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useParams, useNavigate, useLocation } from "react-router-dom";
 import { AppProvider, useApp } from "@/context/AppContext";
 import { Button, C, ToastContainer } from "@/components/ui";
-import { canAccess, HOME_PAGE, routeExists } from "@/routes";
+import { canAccess, HOME_PAGE, routeExists, resolveRoute, ROUTES } from "@/routes";
 
 // Public pages
 import Landing from "@/pages/Landing";
 import RoleSelect from "@/pages/RoleSelect";
 import PublicPage, { PUBLIC_PAGES, type PublicPageKey } from "@/pages/PublicPage";
+import CrossBorderCare from "@/pages/CrossBorderCare";
 
 // Auth
 import AuthLayout from "@/pages/auth/Auth";
@@ -93,33 +95,79 @@ function AppRoot() {
   const { toasts, removeToast } = useApp();
   return (
     <>
-      <RouteGuard />
+      <Routes>
+        {/* Core Marketing */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/landing" element={<Landing />} />
+        <Route path="/role-select" element={<RoleSelect />} />
+        <Route path="/cross-border" element={<CrossBorderCare />} />
+        <Route path="/crossborder" element={<CrossBorderCare />} />
+        <Route path="/cross-border-care" element={<CrossBorderCare />} />
+        <Route path="/public-crossborder" element={<CrossBorderCare />} />
+
+        {/* Doctor Dashboard direct routes */}
+        <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor" element={<DoctorDashboard />} />
+
+        {/* Patient Dashboard direct routes */}
+        <Route path="/patient-dashboard" element={<PatientDashboard />} />
+        <Route path="/patient" element={<PatientDashboard />} />
+
+        {/* Admin Dashboard direct routes */}
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Proxy Dashboard direct routes */}
+        <Route path="/proxy-dashboard" element={<ProxyDashboard />} />
+        <Route path="/proxy" element={<ProxyDashboard />} />
+
+        {/* Enterprise Dashboard direct routes */}
+        <Route path="/enterprise-dashboard" element={<EnterpriseDashboard />} />
+        <Route path="/enterprise" element={<EnterpriseDashboard />} />
+
+        {/* Catch-all dynamic routes */}
+        <Route path="/:pageId" element={<RouteDispatcher />} />
+        <Route path="/:section/:pageId" element={<NestedRouteDispatcher />} />
+        <Route path="*" element={<RouteDispatcher />} />
+      </Routes>
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </>
   );
 }
 
-/**
- * Enforces the route registry before a page renders. Permissions are not solved
- * by hiding navigation: someone who reaches a page they may not open is sent to
- * their own home, and an unknown page renders a real not-found screen.
- */
-function RouteGuard() {
-  const { page, role, adminRole, navigate } = useApp();
-  const known = routeExists(page);
-  const allowed = known && canAccess(page, role, adminRole);
+function RouteDispatcher() {
+  const params = useParams();
+  const { page } = useApp();
+  const rawKey = params.pageId || page;
+  const canonical = resolveRoute(rawKey);
 
-  useEffect(() => {
-    if (known && !allowed && role) {
-      // Signed in but out of scope — land on the role's own dashboard.
-      navigate(HOME_PAGE[role]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, role, adminRole]);
+  if (canonical === "cross-border-care" || canonical === "cross-border" || canonical === "public-crossborder") {
+    return <CrossBorderCare />;
+  }
 
-  if (!known) return <NotFound />;
-  if (!allowed) return role ? <NotFound /> : <SignInRequired />;
-  return <Router />;
+  if (canonical.startsWith("public-")) {
+    const key = canonical.replace("public-", "") as PublicPageKey;
+    if (PUBLIC_PAGES[key]) return <PublicPage page={key} />;
+  } else if (PUBLIC_PAGES[canonical as PublicPageKey]) {
+    return <PublicPage page={canonical as PublicPageKey} />;
+  }
+
+  return <Router canonical={canonical} />;
+}
+
+function NestedRouteDispatcher() {
+  const params = useParams();
+  const rawKey = `${params.section || ""}/${params.pageId || ""}`;
+  const canonical = resolveRoute(rawKey);
+
+  if (canonical.startsWith("public-")) {
+    const key = canonical.replace("public-", "") as PublicPageKey;
+    if (PUBLIC_PAGES[key]) return <PublicPage page={key} />;
+  } else if (PUBLIC_PAGES[canonical as PublicPageKey]) {
+    return <PublicPage page={canonical as PublicPageKey} />;
+  }
+
+  return <Router canonical={canonical} />;
 }
 
 function Shell({ title, body, actions }: { title: string; body: string; actions: React.ReactNode }) {
@@ -134,11 +182,11 @@ function Shell({ title, body, actions }: { title: string; body: string; actions:
 }
 
 function NotFound() {
-  const { navigate, role, signOut } = useApp();
+  const { navigate, role, signOut, page } = useApp();
   return (
     <Shell
       title="We could not find that page"
-      body="The link may be out of date, or the page may not be part of your Docura account."
+      body={`The link "${page}" may be out of date, or the page may not be part of your Docura account.`}
       actions={<>
         <Button onClick={() => navigate(role ? HOME_PAGE[role] : "landing")}>{role ? "Back to your dashboard" : "Back to home"}</Button>
         {role && <Button variant="outline" onClick={signOut}>Sign out</Button>}
@@ -148,32 +196,68 @@ function NotFound() {
 }
 
 function SignInRequired() {
-  const { navigate } = useApp();
+  const { navigate, setRole, page } = useApp();
+  const canonical = resolveRoute(page);
+  const route = ROUTES[canonical];
+  const requiredRoles = route && route.roles !== "public" ? route.roles : [];
+
+  const handleDemoAccess = (demoRole: "patient" | "doctor" | "proxy" | "enterprise" | "admin") => {
+    setRole(demoRole);
+    navigate(canonical);
+  };
+
   return (
     <Shell
       title="Sign in to continue"
-      body="This part of Docura is only available once you are signed in to an account."
-      actions={<>
-        <Button onClick={() => navigate("login")}>Log in</Button>
-        <Button variant="outline" onClick={() => navigate("role-select")}>Create an account</Button>
-      </>}
+      body={`This section (${canonical}) is available to signed-in accounts.`}
+      actions={
+        <div className="flex flex-col gap-3 items-center">
+          <div className="flex flex-wrap gap-2 justify-center">
+            <Button onClick={() => navigate("login")}>Log in</Button>
+            <Button variant="outline" onClick={() => navigate("role-select")}>Create an account</Button>
+          </div>
+          {requiredRoles.length > 0 && (
+            <div className="pt-2 border-t border-slate-200 w-full flex flex-wrap gap-2 justify-center items-center">
+              <span className="text-xs text-slate-500 font-medium mr-1">Demo Access:</span>
+              {requiredRoles.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleDemoAccess(r as any)}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition-colors border border-emerald-200 cursor-pointer"
+                >
+                  ⚡ Access as {r.charAt(0).toUpperCase() + r.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      }
     />
   );
 }
 
-function Router() {
+function Router({ canonical: propCanonical }: { canonical?: string } = {}) {
   const { page } = useApp();
+  const canonical = propCanonical || resolveRoute(page);
 
-  // Every marketing page shares one template driven by the content registry.
-  if (page.startsWith("public-")) {
-    const key = page.replace("public-", "") as PublicPageKey;
-    if (PUBLIC_PAGES[key]) return <PublicPage page={key} />;
+  // Cross-Border Care
+  if (canonical === "cross-border-care" || canonical === "cross-border" || canonical === "public-crossborder") {
+    return <CrossBorderCare />;
   }
 
-  switch (page) {
+  // Public marketing pages (both public-prefix and short names)
+  if (canonical.startsWith("public-")) {
+    const key = canonical.replace("public-", "") as PublicPageKey;
+    if (PUBLIC_PAGES[key]) return <PublicPage page={key} />;
+  } else if (PUBLIC_PAGES[canonical as PublicPageKey]) {
+    return <PublicPage page={canonical as PublicPageKey} />;
+  }
+
+  switch (canonical) {
     // Public
     case "landing": return <Landing />;
     case "role-select": return <RoleSelect />;
+    case "cross-border-care": return <CrossBorderCare />;
 
     // Auth
     case "login": return <AuthLayout initialView="login" />;
@@ -290,8 +374,10 @@ function Router() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppRoot />
-    </AppProvider>
+    <BrowserRouter>
+      <AppProvider>
+        <AppRoot />
+      </AppProvider>
+    </BrowserRouter>
   );
 }

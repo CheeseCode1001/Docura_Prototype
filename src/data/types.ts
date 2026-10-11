@@ -160,6 +160,26 @@ export interface CrossBorderCase {
   date: string;
 }
 
+export type CrossBorderStatus =
+  | "active"
+  | "setup-required"
+  | "coordination-pending"
+  | "awaiting-clinical-review"
+  | "action-required"
+  | "completed";
+
+export interface PatientCrossBorderState {
+  originCountry: Country;
+  destinationCountry: Country;
+  status: CrossBorderStatus;
+  personalDoctorId: string;
+  personalDoctorName: string;
+  prescribingDoctorId: string;
+  prescribingDoctorName: string;
+  activeMedication: string;
+  lastSyncedAt: string;
+}
+
 export interface Payout {
   id: string;
   doctor: string;

@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { AppShell } from "@/components/layout";
 import { Card, Badge, Button, C, Modal } from "@/components/ui";
-import { CROSS_BORDER_CASES, DOCTORS } from "@/data/mock";
+import { DOCTORS } from "@/data/mock";
+import { useApp } from "@/context/AppContext";
 
 const prescribingDoctors = DOCTORS.filter((d) => d.isPrescribing || d.country === "United Kingdom");
 
 export default function AdminCrossBorder() {
-  const [cases, setCases] = useState(CROSS_BORDER_CASES);
-  const [assignCase, setAssignCase] = useState<typeof CROSS_BORDER_CASES[0] | null>(null);
+  const { domain, updateCrossBorderCase, addToast } = useApp();
+  const cases = domain.crossBorderCases;
+  const [assignCase, setAssignCase] = useState<typeof cases[0] | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState("");
   const [success, setSuccess] = useState(false);
 
   const handleAssign = () => {
     if (!selectedDoctor || !assignCase) return;
     const doc = DOCTORS.find((d) => d.id === selectedDoctor);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setCases((c) => c.map((x) => x.id === assignCase.id ? { ...x, status: "assigned" as const, prescribingDoctor: doc?.name ?? "" } : x) as any);
+    if (!doc) return;
+    updateCrossBorderCase(assignCase.id, doc.name, doc.id);
+    addToast("success", `Assigned ${doc.name} as prescribing doctor for ${assignCase.patient}.`);
     setSuccess(true);
   };
 

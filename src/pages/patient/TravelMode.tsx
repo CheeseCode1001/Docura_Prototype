@@ -8,7 +8,7 @@ const COUNTRIES = ["United Kingdom", "United States", "Canada", "Germany", "Fran
 type TravelState = "idle" | "setup" | "active";
 
 export default function TravelMode() {
-  const { navigate } = useApp();
+  const { navigate, updatePatientCrossBorder, addToast } = useApp();
   const [state, setState] = useState<TravelState>("active");
   const [step, setStep] = useState(0);
   const [destination, setDestination] = useState("United Kingdom");
@@ -120,7 +120,19 @@ export default function TravelMode() {
             <p className="text-xs text-center" style={{ color: C.muted }}>Coverage and prescription support may vary by country.</p>
             <div className="flex gap-3">
               <Button variant="ghost" fullWidth onClick={() => setStep(1)}>Back</Button>
-              <Button fullWidth onClick={() => setState("active")}>Confirm travel</Button>
+              <Button
+                fullWidth
+                onClick={() => {
+                  setState("active");
+                  updatePatientCrossBorder({
+                    destinationCountry: destination === "United Kingdom" ? "United Kingdom" : "Nigeria",
+                    status: "active",
+                  });
+                  addToast("success", `Travel Mode activated: Care coordinated in ${destination}`);
+                }}
+              >
+                Confirm travel
+              </Button>
             </div>
           </div>
         )}

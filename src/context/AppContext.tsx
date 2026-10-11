@@ -1,9 +1,12 @@
-import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, ReactNode } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api, seeds, storage, today, clockTime, uid } from "@/services/api";
+import { parseLocation, buildHash, resolveRoute, routeExists, canAccess, HOME_PAGE } from "@/routes";
 import type {
   AdminRole, AppNotification, CarePlan, Consultation, EnterpriseMember, EnterpriseProgram, FollowUp, Message,
   NotificationAudience, NotificationPreference, PermissionScope, Prescription, ProxyRelationship, Referral,
   SupportTicket, PatientAlert, MonthlyCheckIn, LabOrder, LabCategory, PrescribingRequest, D2DMessage, ProfessionalConcern,
+  CrossBorderCase, PatientCrossBorderState,
 } from "@/data/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,6 +41,8 @@ export interface DomainState {
   professionalConcerns: ProfessionalConcern[];
   lockedConsultations: Record<string, { note: string; lockedAt: string; addenda: { id: string; text: string; createdAt: string; doctorName: string }[] }>;
   activeWorkspaceRole: "personal" | "prescribing";
+  crossBorderCases: CrossBorderCase[];
+  patientCrossBorder: PatientCrossBorderState;
 }
 
 const DOMAIN_KEY = "docura-domain-state";
@@ -45,6 +50,8 @@ const ROLE_KEY = "docura-role";
 const ADMIN_ROLE_KEY = "docura-admin-role";
 const SESSION_KEY = "docura-session";
 const ONBOARDING_KEY = "docura-onboarding";
+const PAGE_KEY = "docura-current-page";
+const PARAMS_KEY = "docura-current-params";
 const ROLE_VALUES: UserRole[] = ["patient", "doctor", "proxy", "admin", "enterprise"];
 const ADMIN_ROLE_VALUES: AdminRole[] = ["super-admin", "operations", "finance", "support", "medical-board"];
 
@@ -77,6 +84,8 @@ function initialDomain(): DomainState {
     professionalConcerns: seeds.professionalConcerns(),
     lockedConsultations: {},
     activeWorkspaceRole: "personal",
+    crossBorderCases: seeds.crossBorderCases(),
+    patientCrossBorder: seeds.patientCrossBorder(),
   };
 }
 
@@ -166,6 +175,9 @@ interface AppContextType {
   addConsultationAddendum: (consultationId: string, text: string) => void;
   // Workspace Switcher
   setActiveWorkspaceRole: (role: "personal" | "prescribing") => void;
+  // Cross-Border Care
+  updateCrossBorderCase: (id: string, prescribingDoctorName: string, prescribingDoctorId?: string) => void;
+  updatePatientCrossBorder: (changes: Partial<PatientCrossBorderState>) => void;
   // Toasts
   toasts: Toast[];
   addToast: (type: Toast["type"], message: string) => void;
@@ -175,6 +187,9 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const rrNavigate = useNavigate();
+  const rrLocation = useLocation();
+
   const [role, setRoleState] = useState<UserRole>(() => {
     const saved = storage.readRaw(ROLE_KEY);
     return ROLE_VALUES.includes(saved as UserRole) ? (saved as UserRole) : null;
@@ -184,10 +199,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return ADMIN_ROLE_VALUES.includes(saved as AdminRole) ? (saved as AdminRole) : "super-admin";
   });
   const [page, setPage] = useState(() => {
-    const saved = storage.readRaw(ROLE_KEY);
-    return ROLE_VALUES.includes(saved as UserRole) ? `${saved}-dashboard` : "landing";
+    if (typeof window !== "undefined") {
+      const loc = parseLocation();
+      if (loc.page && routeExists(loc.page)) {
+        return resolveRoute(loc.page);
+      }
+    }
+    const saved = storage.readRaw(PAGE_KEY);
+    const savedRole = storage.readRaw(ROLE_KEY) as UserRole;
+    if (saved && routeExists(saved)) {
+      const resolved = resolveRoute(saved);
+      if (canAccess(resolved, savedRole, "super-admin")) {
+        return resolved;
+      }
+    }
+    return ROLE_VALUES.includes(savedRole) ? `${savedRole}-dashboard` : "landing";
   });
-  const [params, setParams] = useState<Record<string, string>>({});
+  const [params, setParams] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      const loc = parseLocation();
+      if (Object.keys(loc.params).length > 0) {
+        return loc.params;
+      }
+    }
+    return storage.read<Record<string, string>>(PARAMS_KEY, {}) || {};
+  });
   const [history, setHistory] = useState<string[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [domain, setDomain] = useState<DomainState>(readDomainState);
@@ -195,6 +231,68 @@ export function AppProvider({ children }: { children: ReactNode }) {
     authenticated: storage.readRaw(SESSION_KEY) === "active",
     onboardingComplete: storage.readRaw(ONBOARDING_KEY) === "complete",
   }));
+
+  // Synchronize React Router location changes with page, params, and role
+  useEffect(() => {
+    // Automatically redirect from legacy hash (/#/path) to clean URL (/path)
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hashRaw = window.location.hash.replace(/^#\/?/, "").trim();
+      if (hashRaw) {
+        const [hPath, hQuery] = hashRaw.split("?");
+        const resolved = resolveRoute(hPath);
+        const cleanPath = `/${resolved === "landing" ? "" : resolved}${hQuery ? `?${hQuery}` : ""}`;
+        window.history.replaceState(null, "", cleanPath);
+        rrNavigate(cleanPath, { replace: true });
+        return;
+      }
+    }
+
+    const rawPath = rrLocation.pathname.replace(/^\/+/, "");
+    const canonical = resolveRoute(rawPath);
+
+    const queryParams: Record<string, string> = {};
+    if (rrLocation.search) {
+      const sp = new URLSearchParams(rrLocation.search);
+      sp.forEach((v, k) => {
+        queryParams[k] = v;
+      });
+    }
+
+    if (canonical && routeExists(canonical)) {
+      setPage((prev) => {
+        if (prev !== canonical) {
+          storage.writeRaw(PAGE_KEY, canonical);
+          return canonical;
+        }
+        return prev;
+      });
+      setParams((prev) => {
+        if (JSON.stringify(prev) !== JSON.stringify(queryParams)) {
+          storage.write(PARAMS_KEY, queryParams);
+          return queryParams;
+        }
+        return prev;
+      });
+
+      // Role auto-alignment for seamless testing across dashboards:
+      if (canonical.startsWith("doctor-") || canonical === "prescribing-workspace" || canonical === "doctor") {
+        setRoleState("doctor");
+        storage.writeRaw(ROLE_KEY, "doctor");
+      } else if ((canonical.startsWith("admin-") && canonical !== "admin-login") || canonical === "admin") {
+        setRoleState("admin");
+        storage.writeRaw(ROLE_KEY, "admin");
+      } else if (canonical.startsWith("proxy-") || canonical === "proxy") {
+        setRoleState("proxy");
+        storage.writeRaw(ROLE_KEY, "proxy");
+      } else if (canonical.startsWith("enterprise-") || canonical === "enterprise") {
+        setRoleState("enterprise");
+        storage.writeRaw(ROLE_KEY, "enterprise");
+      } else if ((canonical.startsWith("patient-") && canonical !== "patient-onboarding") || canonical === "patient") {
+        setRoleState("patient");
+        storage.writeRaw(ROLE_KEY, "patient");
+      }
+    }
+  }, [rrLocation.pathname, rrLocation.search]);
 
   const updateDomain = useCallback((updater: (current: DomainState) => DomainState) => {
     setDomain((current) => {
@@ -204,22 +302,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  // ─── Navigation ────────────────────────────────────────────────────────────
+  // ─── Navigation via React Router ──────────────────────────────────────────
   const navigate = useCallback((newPage: string, newParams: Record<string, string> = {}) => {
+    const canonical = resolveRoute(newPage);
     setHistory((h) => [...h, page]);
-    setPage(newPage);
+    setPage(canonical);
     setParams(newParams);
+
+    // Auto-align role for role-specific routes in prototype mode so dashboards ALWAYS load!
+    if (canonical.startsWith("doctor-") || canonical === "prescribing-workspace" || canonical === "doctor") {
+      setRoleState("doctor");
+      storage.writeRaw(ROLE_KEY, "doctor");
+    } else if ((canonical.startsWith("admin-") && canonical !== "admin-login") || canonical === "admin") {
+      setRoleState("admin");
+      storage.writeRaw(ROLE_KEY, "admin");
+    } else if (canonical.startsWith("proxy-") || canonical === "proxy") {
+      setRoleState("proxy");
+      storage.writeRaw(ROLE_KEY, "proxy");
+    } else if (canonical.startsWith("enterprise-") || canonical === "enterprise") {
+      setRoleState("enterprise");
+      storage.writeRaw(ROLE_KEY, "enterprise");
+    } else if ((canonical.startsWith("patient-") && canonical !== "patient-onboarding") || canonical === "patient") {
+      setRoleState("patient");
+      storage.writeRaw(ROLE_KEY, "patient");
+    }
+
+    const search = new URLSearchParams();
+    for (const [k, v] of Object.entries(newParams)) {
+      if (v) search.set(k, v);
+    }
+    const searchStr = search.toString() ? `?${search.toString()}` : "";
+    const cleanTarget = canonical === "landing" ? `/${searchStr}` : `/${canonical}${searchStr}`;
+    rrNavigate(cleanTarget);
+
+    storage.writeRaw(PAGE_KEY, canonical);
+    storage.write(PARAMS_KEY, newParams);
     window.scrollTo(0, 0);
-  }, [page]);
+  }, [page, rrNavigate]);
 
   const back = useCallback(() => {
-    setHistory((h) => {
-      const prev = [...h];
-      const target = prev.pop();
-      if (target) { setPage(target); setParams({}); }
-      return prev;
-    });
-  }, []);
+    rrNavigate(-1);
+  }, [rrNavigate]);
 
   const setRole = useCallback((nextRole: UserRole) => {
     setRoleState(nextRole);
@@ -238,10 +361,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     storage.remove(ROLE_KEY);
     storage.remove(SESSION_KEY);
     storage.remove(ONBOARDING_KEY);
+    storage.writeRaw(PAGE_KEY, "landing");
+    storage.write(PARAMS_KEY, {});
     setPage("landing");
     setParams({});
     setHistory([]);
-  }, []);
+    rrNavigate("/");
+  }, [rrNavigate]);
 
   const markOnboardingComplete = useCallback(() => {
     setSession({ authenticated: true, onboardingComplete: true });
@@ -816,6 +942,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, [updateDomain]);
 
+  // ─── Cross-Border Care ───────────────────────────────────────────────────────
+  const updateCrossBorderCase = useCallback((id: string, prescribingDoctorName: string, prescribingDoctorId?: string) => {
+    updateDomain((current) => {
+      const targetCase = current.crossBorderCases.find((c) => c.id === id);
+      const updatedCases = current.crossBorderCases.map((c) => (c.id === id ? { ...c, status: "assigned" as const, prescribingDoctor: prescribingDoctorName } : c));
+      return {
+        ...current,
+        crossBorderCases: updatedCases,
+        patientCrossBorder: targetCase?.patient === "Adaeze Okafor" || targetCase?.patient === "Adaeze Okonkwo" ? {
+          ...current.patientCrossBorder,
+          prescribingDoctorName,
+          prescribingDoctorId: prescribingDoctorId || current.patientCrossBorder.prescribingDoctorId,
+          status: "active",
+          lastSyncedAt: today(),
+        } : current.patientCrossBorder,
+        notifications: notify(current,
+          { audience: "patient", type: "system", title: "Cross-border doctor assigned", body: `${prescribingDoctorName} has been assigned as your locally licensed prescribing doctor.`, page: "care-team" },
+          { audience: "doctor", type: "system", title: "New cross-border coordination case", body: `Assigned to coordinate local care for ${targetCase?.patient || "patient"}.`, page: "prescribing-workspace" },
+          { audience: "admin", type: "system", title: "Case assignment complete", body: `Assigned ${prescribingDoctorName} to ${targetCase?.patient || "case"}.`, page: "admin-crossborder" },
+        ),
+        activity: [{ id: uid("activity"), title: "Cross-border doctor assigned", detail: `${targetCase?.patient || "Patient"} ➔ ${prescribingDoctorName}`, tone: "success", createdAt: new Date().toISOString() }, ...current.activity],
+      };
+    });
+  }, [updateDomain]);
+
+  const updatePatientCrossBorder = useCallback((changes: Partial<PatientCrossBorderState>) => {
+    updateDomain((current) => {
+      const next = { ...current.patientCrossBorder, ...changes, lastSyncedAt: today() };
+      return {
+        ...current,
+        patientCrossBorder: next,
+        notifications: notify(current,
+          { audience: "patient", type: "system", title: "Cross-border care updated", body: `Care destination set to ${next.destinationCountry}. Coordinated by ${next.personalDoctorName} & ${next.prescribingDoctorName}.`, page: "care-team" },
+          { audience: "doctor", type: "system", title: "Patient care location updated", body: `Patient Adaeze Okonkwo has active cross-border care in ${next.destinationCountry}.`, page: "doctor-workspace" }
+        ),
+        activity: [{ id: uid("activity"), title: "Cross-border care updated", detail: `${next.originCountry} ↔ ${next.destinationCountry} · ${next.status}`, tone: "info", createdAt: new Date().toISOString() }, ...current.activity],
+      };
+    });
+  }, [updateDomain]);
+
   // ─── Toasts ────────────────────────────────────────────────────────────────
   const addToast = useCallback((type: Toast["type"], message: string) => {
     const id = Math.random().toString(36).slice(2);
@@ -846,6 +1012,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       respondProfessionalConcern,
       lockConsultationNote, addConsultationAddendum,
       setActiveWorkspaceRole,
+      updateCrossBorderCase, updatePatientCrossBorder,
       toasts, addToast, removeToast,
     }}>
       {children}

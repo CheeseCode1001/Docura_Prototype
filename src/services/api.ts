@@ -66,6 +66,18 @@ export const seeds = {
   prescribingRequests: () => seed.PRESCRIBING_REQUESTS,
   d2dMessages: () => seed.D2D_MESSAGES,
   professionalConcerns: () => seed.PROFESSIONAL_CONCERNS,
+  crossBorderCases: (): CrossBorderCase[] => seed.CROSS_BORDER_CASES,
+  patientCrossBorder: () => ({
+    originCountry: "Nigeria" as const,
+    destinationCountry: "United Kingdom" as const,
+    status: "active" as const,
+    personalDoctorId: "d1",
+    personalDoctorName: "Dr. Amara Osei",
+    prescribingDoctorId: "d2",
+    prescribingDoctorName: "Dr. Sarah Adeyemi",
+    activeMedication: "Amlodipine 5mg Daily",
+    lastSyncedAt: today(),
+  }),
 };
 
 // ─── Persistence ─────────────────────────────────────────────────────────────

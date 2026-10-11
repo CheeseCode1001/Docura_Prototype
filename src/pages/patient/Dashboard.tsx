@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useApp } from "@/context/AppContext";
 import { AppShell } from "@/components/layout";
-import { Avatar, VerifiedBadge, AvailabilityDot, C } from "@/components/ui";
+import { Avatar, VerifiedBadge, AvailabilityDot, C, Badge, Button, Modal } from "@/components/ui";
 import { PATIENT, DOCTORS, CONSULTATIONS, MEDICATIONS } from "@/data/mock";
 
 const CARD = { backgroundColor: "white", border: "1px solid rgba(21,95,84,0.08)", borderRadius: 20, boxShadow: "0 12px 32px rgba(21,95,84,0.05)" };
@@ -22,7 +23,10 @@ function Ico({ type }: { type: string }) {
 }
 
 export default function PatientDashboard() {
-  const { navigate, domain } = useApp();
+  const { navigate, domain, updatePatientCrossBorder, addToast } = useApp();
+  const cb = domain.patientCrossBorder;
+  const [showCrossBorderModal, setShowCrossBorderModal] = useState(false);
+  const [destinationCountry, setDestinationCountry] = useState(cb.destinationCountry);
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const activeSubscription = domain.subscriptions.find((subscription) => subscription.patientId === PATIENT.id && subscription.status === "active");
@@ -108,6 +112,99 @@ export default function PatientDashboard() {
             </button>
           </div>
         )}
+
+        {/* ── Cross-Border Care Experience (Prominent Core Feature) ── */}
+        <div
+          className="w-full rounded-3xl p-5 md:p-6 transition-all border relative overflow-hidden"
+          style={{
+            backgroundColor: "white",
+            borderColor: "rgba(21,95,84,0.12)",
+            boxShadow: "0 14px 34px rgba(21,95,84,0.06)",
+          }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 mb-4" style={{ borderColor: "#f0f2f7" }}>
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0" style={{ backgroundColor: C.amberLight }}>
+                🌍
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{ color: C.amber }}>
+                    Cross-Border Care Active
+                  </span>
+                  <Badge variant={cb.status === "active" ? "green" : "amber"}>
+                    {cb.status === "active" ? "Active · Coordinated Continuity" : "Coordination Pending"}
+                  </Badge>
+                  <span className="text-[11px] text-stone-400 font-medium">MDCN & GMC Network</span>
+                </div>
+                <h3 className="text-lg md:text-xl font-bold mt-0.5" style={{ fontFamily: "var(--font-display)", color: C.navy }}>
+                  {cb.originCountry === "Nigeria" ? "🇳🇬 Nigeria" : "🇬🇧 United Kingdom"} ↔ {cb.destinationCountry === "United Kingdom" ? "🇬🇧 United Kingdom" : "🇳🇬 Nigeria"}
+                </h3>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => navigate("cross-border-care")}
+                className="px-4 py-2 rounded-xl text-xs font-semibold border hover:bg-stone-50 transition-colors"
+                style={{ borderColor: C.border, color: C.navy }}
+              >
+                Care Model Details →
+              </button>
+              <button
+                onClick={() => navigate("travel-mode")}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-white shadow-2xs hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: C.navy }}
+              >
+                ✈️ Travel Mode
+              </button>
+              <button
+                onClick={() => setShowCrossBorderModal(true)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold hover:opacity-85 transition-opacity"
+                style={{ backgroundColor: C.amberLight, color: C.navy }}
+              >
+                ⚙️ Care Status
+              </button>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-3.5 text-xs">
+            {/* Box 1: Personal Doctor */}
+            <div className="p-3.5 rounded-2xl bg-stone-50/80 border border-stone-200/80 flex items-start gap-3">
+              <Avatar src={doc.photo} name={doc.name} size={40} />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">Personal Doctor ({cb.originCountry})</span>
+                <p className="font-bold text-stone-900 truncate mt-0.5">{doc.name}</p>
+                <p className="text-[11px] text-stone-500 truncate">{doc.specialty} · MDCN Verified</p>
+                <span className="inline-block mt-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">Continuous Lead</span>
+              </div>
+            </div>
+
+            {/* Box 2: Locally Licensed Prescribing Doctor */}
+            <div className="p-3.5 rounded-2xl bg-stone-50/80 border border-stone-200/80 flex items-start gap-3">
+              <Avatar src={prescDoc.photo} name={prescDoc.name} size={40} />
+              <div className="min-w-0 flex-1">
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">Prescribing Doctor ({cb.destinationCountry})</span>
+                <p className="font-bold text-stone-900 truncate mt-0.5">{prescDoc.name}</p>
+                <p className="text-[11px] text-stone-500 truncate">GMC #7834521 · UK Statutory Rx</p>
+                <span className="inline-block mt-1 text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">Local Authorized Rx</span>
+              </div>
+            </div>
+
+            {/* Box 3: Live Clinical Coordination Status */}
+            <div className="p-3.5 rounded-2xl bg-stone-50/80 border border-stone-200/80 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">Current Care Action</span>
+                <p className="font-bold text-stone-900 mt-0.5 truncate">{cb.activeMedication}</p>
+                <p className="text-[11px] text-emerald-700 font-medium">Prescription authorized locally</p>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-stone-200/60 text-[11px]">
+                <span className="text-stone-400">Synced: {cb.lastSyncedAt || "Today"}</span>
+                <button onClick={() => navigate("care-team")} className="font-semibold text-amber-700 hover:underline">Care Team →</button>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* ── Main 3-col layout ──────────────────────────────── */}
         <div className="grid w-full min-w-0 lg:grid-cols-12 gap-5">
@@ -335,6 +432,56 @@ export default function PatientDashboard() {
         </div>
 
       </div>
+
+      <Modal open={showCrossBorderModal} onClose={() => setShowCrossBorderModal(false)} title="Cross-Border Care Status">
+        <div className="flex flex-col gap-4 text-xs">
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+            <p className="font-bold text-amber-950 mb-1">Dual-Doctor Jurisdictional Model</p>
+            <p className="text-amber-900 leading-relaxed">
+              Your Personal Doctor ({cb.personalDoctorName}) continues to lead your longitudinal care, while local statutory prescriptions in {destinationCountry} are handled by your Locally Licensed Prescribing Doctor ({cb.prescribingDoctorName}).
+            </p>
+          </div>
+
+          <div>
+            <label className="font-bold text-stone-700 block mb-1.5 uppercase text-[10px] tracking-wider">Switch Destination Country</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setDestinationCountry("United Kingdom")}
+                className={`p-3 rounded-xl border text-left font-semibold flex items-center gap-2 ${destinationCountry === "United Kingdom" ? "border-amber-500 bg-amber-50 text-amber-950" : "border-stone-200 bg-white text-stone-700"}`}
+              >
+                <span>🇬🇧</span>
+                <span>United Kingdom</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDestinationCountry("Nigeria")}
+                className={`p-3 rounded-xl border text-left font-semibold flex items-center gap-2 ${destinationCountry === "Nigeria" ? "border-amber-500 bg-amber-50 text-amber-950" : "border-stone-200 bg-white text-stone-700"}`}
+              >
+                <span>🇳🇬</span>
+                <span>Nigeria</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2 flex gap-2">
+            <Button variant="ghost" fullWidth onClick={() => setShowCrossBorderModal(false)}>Cancel</Button>
+            <Button
+              fullWidth
+              onClick={() => {
+                updatePatientCrossBorder({
+                  destinationCountry,
+                  status: "active",
+                });
+                addToast("success", `Care destination updated to ${destinationCountry}`);
+                setShowCrossBorderModal(false);
+              }}
+            >
+              Save Care Status
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </AppShell>
   );
 }

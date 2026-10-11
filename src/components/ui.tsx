@@ -91,18 +91,28 @@ export function Spinner({ size = 16, color = "white" }: { size?: number; color?:
 }
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
-type BadgeVariant = "amber" | "navy" | "green" | "red" | "yellow" | "blue" | "gray";
+export type BadgeVariant =
+  | "amber" | "navy" | "green" | "emerald" | "success" | "red" | "coral"
+  | "danger" | "yellow" | "warning" | "blue" | "info" | "purple" | "gray" | string;
+
 export function Badge({ children, variant = "gray" }: { children: ReactNode; variant?: BadgeVariant }) {
-  const map: Record<BadgeVariant, [string, string]> = {
+  const map: Record<string, [string, string]> = {
     amber: [C.amberLight, C.amber],
     navy: ["#E8ECF5", C.navy],
     green: [C.greenLight, C.green],
+    emerald: ["#D1FAE5", "#065F46"],
+    success: [C.greenLight, C.green],
     red: [C.redLight, C.red],
+    coral: ["#FFE4E1", C.coral || "#E85D40"],
+    danger: [C.redLight, C.red],
     yellow: [C.yellowLight, C.yellow],
+    warning: [C.yellowLight, C.yellow],
     blue: [C.blueLight, C.blue],
+    info: [C.blueLight, C.blue],
+    purple: ["#F3E8FF", "#6B21A8"],
     gray: ["#F3F4F6", "#6B7280"],
   };
-  const [bg, color] = map[variant];
+  const [bg, color] = (variant && map[variant]) ? map[variant] : map.gray;
   return (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold"
@@ -124,14 +134,14 @@ export function VerifiedBadge({ label = "Verified" }: { label?: string }) {
 }
 
 // ─── AvailabilityDot ──────────────────────────────────────────────────────────
-export function AvailabilityDot({ status }: { status: "online" | "available-today" | "away" | "offline" }) {
-  const map = {
+export function AvailabilityDot({ status }: { status: "online" | "available-today" | "away" | "offline" | string }) {
+  const map: Record<string, { color: string; label: string }> = {
     online: { color: C.green, label: "Online now" },
     "available-today": { color: C.amber, label: "Available today" },
     away: { color: C.yellow, label: "Away" },
     offline: { color: "#9CA3AF", label: "Offline" },
   };
-  const { color, label } = map[status];
+  const { color, label } = (status && map[status]) ? map[status] : map.offline;
   return (
     <span className="inline-flex items-center gap-1.5 text-xs" style={{ color: C.muted }}>
       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />

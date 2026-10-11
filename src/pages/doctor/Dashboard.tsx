@@ -13,18 +13,18 @@ function Metric({ label, value, detail, page, color }: { label: string; value: s
 }
 
 export default function DoctorDashboard() {
-  const { navigate, domain, activeWorkspaceRole } = useApp();
+  const { navigate, domain, activeWorkspaceRole, setRole } = useApp();
   const doc = DOCTORS[0];
-  const doctorConsultations = domain.consultations.filter((item) => item.doctorId === doc.id);
-  const doctorFollowUps = domain.followUps.filter((item) => item.doctorId === doc.id);
+  const doctorConsultations = (domain.consultations || []).filter((item) => item.doctorId === doc.id);
+  const doctorFollowUps = (domain.followUps || []).filter((item) => item.doctorId === doc.id);
   const dueFollowUps = doctorFollowUps.filter((item) => item.status === "upcoming").length;
-  const activePlans = domain.carePlans.filter((item) => item.doctorId === doc.id && item.status === "active").length;
-  const unreadMessages = domain.messages.filter((item) => item.isDoctor === false && item.status === "unread").length;
-  const verification = domain.verificationDecisions.find((item) => item.id === "v1");
+  const activePlans = (domain.carePlans || []).filter((item) => item.doctorId === doc.id && item.status === "active").length;
+  const unreadMessages = (domain.messages || []).filter((item) => item.isDoctor === false && item.status === "unread").length;
+  const verification = (domain.verificationDecisions || []).find((item) => item.id === "v1");
   const verificationLabel = verification?.status === "approved" ? "Verified" : verification?.status === "rejected" ? "Restricted" : "Under review";
 
   // Dynamic Patient Alerts calculations
-  const unresolvedAlerts = domain.patientAlerts.filter((a) => a.status === "active");
+  const unresolvedAlerts = (domain.patientAlerts || []).filter((a) => a.status === "active");
   const urgentAlerts = unresolvedAlerts.filter((a) => a.severity === "high");
 
   const hour = new Date().getHours();
@@ -102,6 +102,10 @@ export default function DoctorDashboard() {
           <Button size="sm" variant="outline" onClick={() => navigate("consultation-room", { doctorId: "d1" })}>
             Start Care Episode
           </Button>
+          <Button size="sm" onClick={() => navigate("prescribing-workspace")} className="bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5">
+            <span>🌍</span>
+            <span>Cross-Border Rx Queue ({((domain.prescribingRequests || []).filter(r => r.status === "awaiting-local-review" || r.status === "under-review")).length})</span>
+          </Button>
           <Button size="sm" variant="outline" onClick={() => navigate("doctor-labs")}>
             🧪 Lab Orders
           </Button>
@@ -111,11 +115,6 @@ export default function DoctorDashboard() {
           <Button size="sm" variant="outline" onClick={() => navigate("doctor-grow-practice")}>
             📈 Grow My Panel
           </Button>
-          {activeWorkspaceRole === "prescribing" && (
-            <Button size="sm" onClick={() => navigate("prescribing-workspace")} className="bg-purple-700 hover:bg-purple-800 text-white">
-              ⚕️ Prescribing Queue (2 pending)
-            </Button>
-          )}
         </div>
 
         {/* Top 4 Metrics */}
